@@ -73,6 +73,26 @@ export async function gatherContextData(): Promise<DashboardContext> {
     console.log('Using fallback project data');
   }
 
+  // Fetch monthly metrics for financial calculations
+  let monthlyMetrics: Array<{ cumulative_value: number; amortized_cost: number; monthly_roi: number }> = [];
+  let netAIValue = -12500; // Default fallback
+  
+  try {
+    const { data: metricsData, error } = await supabase
+      .from('monthly_metrics')
+      .select('cumulative_value, amortized_cost, monthly_roi, month_index')
+      .order('month_index', { ascending: true });
+
+    if (!error && metricsData && metricsData.length > 0) {
+      monthlyMetrics = metricsData;
+      const latestMetrics = metricsData[metricsData.length - 1];
+      const totalAmortizedCost = metricsData.reduce((sum, m) => sum + (m.amortized_cost || 0), 0);
+      netAIValue = (latestMetrics.cumulative_value || 0) - totalAmortizedCost;
+    }
+  } catch (e) {
+    console.log('Using fallback metrics data');
+  }
+
   // Fetch employees and calculate department stats
   let departments: DashboardContext['departments'] = [];
   let totalEmployees = 512;
@@ -152,9 +172,18 @@ export async function gatherContextData(): Promise<DashboardContext> {
   const warningDepts = departments.filter(d => d.status === 'warning').length;
   const atRiskProjects = projects.filter(p => p.status === 'at-risk' || p.status === 'off-track').length;
 
+  // Format Net AI Value for display
+  const formatNetAIValue = (value: number): string => {
+    const absValue = Math.abs(value);
+    if (absValue >= 1000) {
+      return `${value >= 0 ? '' : '-'}$${(absValue / 1000).toFixed(1)}k`;
+    }
+    return `${value >= 0 ? '' : '-'}$${absValue.toLocaleString()}`;
+  };
+
   return {
     summary: {
-      netAIValue: '-$12,500',
+      netAIValue: formatNetAIValue(netAIValue),
       activationRate,
       deliveryRate,
       projectedROI: '+45%',
