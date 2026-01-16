@@ -201,6 +201,7 @@ export default function ROICalculator() {
                   <InputWithTip
                     label="Número de usuarios"
                     prefix=""
+                    tip="Cantidad de empleados que usarán las herramientas de IA activamente"
                     value={inputs.numberOfUsers}
                     onChange={(v) => updateInput('numberOfUsers', v)}
                   />
@@ -212,11 +213,13 @@ export default function ROICalculator() {
                 <div className="grid grid-cols-2 gap-4">
                   <InputWithTip
                     label="Setup e integración"
+                    tip="Costos únicos de configuración, integración con sistemas existentes y consultoría inicial"
                     value={inputs.implementationCost}
                     onChange={(v) => updateInput('implementationCost', v)}
                   />
                   <InputWithTip
                     label="Presupuesto training"
+                    tip="Inversión en capacitación formal: cursos, talleres, materiales y tiempo de instructores"
                     value={inputs.trainingBudget}
                     onChange={(v) => updateInput('trainingBudget', v)}
                   />
@@ -236,6 +239,7 @@ export default function ROICalculator() {
                   />
                   <InputWithTip
                     label="Costo hora promedio"
+                    tip="Costo promedio por hora de trabajo de los empleados (incluye salario, beneficios y overhead)"
                     value={inputs.avgHourlyCost}
                     onChange={(v) => updateInput('avgHourlyCost', v)}
                   />
@@ -267,11 +271,13 @@ export default function ROICalculator() {
                   label="Horas ahorradas/semana"
                   prefix=""
                   suffix="hrs"
+                  tip="Horas semanales que cada usuario ahorra gracias a la automatización con IA"
                   value={inputs.hoursSavedPerWeek}
                   onChange={(v) => updateInput('hoursSavedPerWeek', v)}
                 />
                 <InputWithTip
                   label="Costo hora promedio"
+                  tip="Tarifa horaria promedio de los empleados para calcular el valor del tiempo ahorrado"
                   value={inputs.avgHourlyRate}
                   onChange={(v) => updateInput('avgHourlyRate', v)}
                 />
@@ -289,11 +295,13 @@ export default function ROICalculator() {
               <div className="grid grid-cols-2 gap-4">
                 <InputWithTip
                   label="Ahorro licencias/mes"
+                  tip="Reducción mensual en costos de software al consolidar o eliminar herramientas redundantes"
                   value={inputs.licenseSavings}
                   onChange={(v) => updateInput('licenseSavings', v)}
                 />
                 <InputWithTip
                   label="Reducción outsourcing/mes"
+                  tip="Ahorro mensual al internalizar tareas que antes se externalizaban a terceros"
                   value={inputs.outsourcingReduction}
                   onChange={(v) => updateInput('outsourcingReduction', v)}
                 />
@@ -341,21 +349,25 @@ export default function ROICalculator() {
             <div className="grid grid-cols-2 gap-4">
               <InputWithTip
                 label="Reducción downtime/mes"
+                tip="Ahorro estimado por menor tiempo de inactividad gracias a mantenimiento predictivo y automatización"
                 value={inputs.downtimeReduction}
                 onChange={(v) => updateInput('downtimeReduction', v)}
               />
               <InputWithTip
                 label="Ahorro compliance/mes"
+                tip="Reducción en multas, auditorías y costos de cumplimiento normativo gracias a mejor control y documentación"
                 value={inputs.complianceSavings}
                 onChange={(v) => updateInput('complianceSavings', v)}
               />
               <InputWithTip
                 label="Fraude prevenido/mes"
+                tip="Pérdidas evitadas gracias a detección temprana de fraude mediante análisis de IA"
                 value={inputs.fraudPrevention}
                 onChange={(v) => updateInput('fraudPrevention', v)}
               />
               <InputWithTip
                 label="Reducción retrabajo/mes"
+                tip="Ahorro por menor cantidad de correcciones y repetición de tareas gracias a mejor calidad inicial"
                 value={inputs.reworkReduction}
                 onChange={(v) => updateInput('reworkReduction', v)}
               />
