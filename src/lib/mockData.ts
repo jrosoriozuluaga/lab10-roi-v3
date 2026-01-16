@@ -139,30 +139,26 @@ export function calculateDepartmentStats(employees: Employee[]): DepartmentStats
 }
 
 export function generateMonthlyMetrics(): MonthlyMetric[] {
-  const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-  const currentMonth = new Date().getMonth();
-  
-  // We're at Month 3, so show realistic growth from Month 0
-  return months.slice(0, currentMonth + 1).map((month, index) => {
-    // Gradual growth curve
-    const progress = index / 12;
-    const baseActivation = 10 + (progress * 55);
-    const baseMau = 20 + (progress * 50);
-    const basePowerUsers = 1 + (progress * 17);
-    
-    // ROI starts negative and trends positive
-    const baseROI = -80 + (progress * 180);
-    const netValue = -50000 + (progress * 150000);
+  // J-Curve data for 12 months (2026) - Investment → Break-even → Growth
+  const jCurveData: MonthlyMetric[] = [
+    // Investment Phase (Months 1-3): Negative values
+    { month: 'Ene', netAIValue: -45000, roi: -78, activationRate: 15, mauRate: 25, powerUsersRate: 2 },
+    { month: 'Feb', netAIValue: -28000, roi: -52, activationRate: 22, mauRate: 31, powerUsersRate: 4 },
+    { month: 'Mar', netAIValue: -12000, roi: -25, activationRate: 29, mauRate: 37, powerUsersRate: 6 },
+    // Break-even (Month 4)
+    { month: 'Abr', netAIValue: 2000, roi: 3, activationRate: 36, mauRate: 43, powerUsersRate: 8 },
+    // Growth Phase (Months 5-12): Exponential growth
+    { month: 'May', netAIValue: 18000, roi: 15, activationRate: 43, mauRate: 49, powerUsersRate: 10 },
+    { month: 'Jun', netAIValue: 35000, roi: 28, activationRate: 50, mauRate: 55, powerUsersRate: 12 },
+    { month: 'Jul', netAIValue: 52000, roi: 42, activationRate: 57, mauRate: 61, powerUsersRate: 14 },
+    { month: 'Ago', netAIValue: 72000, roi: 58, activationRate: 64, mauRate: 67, powerUsersRate: 16 },
+    { month: 'Sep', netAIValue: 95000, roi: 76, activationRate: 71, mauRate: 73, powerUsersRate: 18 },
+    { month: 'Oct', netAIValue: 115000, roi: 92, activationRate: 78, mauRate: 79, powerUsersRate: 20 },
+    { month: 'Nov', netAIValue: 135000, roi: 108, activationRate: 85, mauRate: 85, powerUsersRate: 22 },
+    { month: 'Dic', netAIValue: 158000, roi: 127, activationRate: 92, mauRate: 91, powerUsersRate: 24 },
+  ];
 
-    return {
-      month,
-      activationRate: Math.min(baseActivation + faker.number.float({ min: -5, max: 5 }), 100),
-      mauRate: Math.min(baseMau + faker.number.float({ min: -5, max: 5 }), 100),
-      powerUsersRate: Math.min(basePowerUsers + faker.number.float({ min: -2, max: 2 }), 25),
-      netAIValue: netValue + faker.number.int({ min: -5000, max: 5000 }),
-      roi: baseROI + faker.number.float({ min: -10, max: 10 }),
-    };
-  });
+  return jCurveData;
 }
 
 // ROI Calculator defaults (Month 3 scenario)
