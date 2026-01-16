@@ -1,8 +1,19 @@
 import { DashboardLayout } from '@/components/DashboardLayout';
 import { departmentStats, monthlyMetrics } from '@/lib/mockData';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, BarChart, Bar } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+
+// LAB10 Chart Colors (direct hex for Recharts compatibility)
+const chartColors = {
+  primary: '#FDE047',
+  secondary: '#A78BFA',
+  softBlue: '#60A5FA',
+  grid: '#333333',
+  axis: '#9ca3af',
+  tooltipBg: '#171717',
+  tooltipBorder: '#333333',
+};
 
 const statusColors = { 'on-track': 'bg-success', 'at-risk': 'bg-warning', 'critical': 'bg-destructive' };
 
@@ -17,28 +28,44 @@ export default function AdoptionMetrics() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         <div className="p-6 rounded-xl bg-card border border-border">
           <h3 className="text-lg font-semibold mb-4">Tasa de Activación (12 meses)</h3>
-          <div className="h-64">
+          <div className="h-[350px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={monthlyMetrics}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" />
-                <YAxis stroke="hsl(var(--muted-foreground))" />
-                <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px' }} />
-                <Line type="monotone" dataKey="activationRate" stroke="hsl(var(--primary))" strokeWidth={2} />
+                <CartesianGrid strokeDasharray="3 3" stroke={chartColors.grid} />
+                <XAxis dataKey="month" stroke={chartColors.axis} tick={{ fill: chartColors.axis }} />
+                <YAxis stroke={chartColors.axis} tick={{ fill: chartColors.axis }} />
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: chartColors.tooltipBg, 
+                    borderColor: chartColors.tooltipBorder, 
+                    color: '#fff',
+                    borderRadius: '8px'
+                  }}
+                  labelStyle={{ color: chartColors.axis }}
+                />
+                <Line type="monotone" dataKey="activationRate" stroke={chartColors.primary} strokeWidth={2} dot={{ fill: chartColors.primary }} />
               </LineChart>
             </ResponsiveContainer>
           </div>
         </div>
         <div className="p-6 rounded-xl bg-card border border-border">
           <h3 className="text-lg font-semibold mb-4">Usuarios Activos Mensuales</h3>
-          <div className="h-64">
+          <div className="h-[350px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={monthlyMetrics}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" />
-                <YAxis stroke="hsl(var(--muted-foreground))" />
-                <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px' }} />
-                <Area type="monotone" dataKey="mauRate" stroke="hsl(var(--soft-blue))" fill="hsl(var(--soft-blue) / 0.2)" />
+                <CartesianGrid strokeDasharray="3 3" stroke={chartColors.grid} />
+                <XAxis dataKey="month" stroke={chartColors.axis} tick={{ fill: chartColors.axis }} />
+                <YAxis stroke={chartColors.axis} tick={{ fill: chartColors.axis }} />
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: chartColors.tooltipBg, 
+                    borderColor: chartColors.tooltipBorder, 
+                    color: '#fff',
+                    borderRadius: '8px'
+                  }}
+                  labelStyle={{ color: chartColors.axis }}
+                />
+                <Area type="monotone" dataKey="mauRate" stroke={chartColors.softBlue} fill={chartColors.softBlue} fillOpacity={0.2} />
               </AreaChart>
             </ResponsiveContainer>
           </div>

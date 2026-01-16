@@ -3,12 +3,23 @@ import { DashboardLayout } from '@/components/DashboardLayout';
 import { KPICard } from '@/components/KPICard';
 import { SmartAlert } from '@/components/SmartAlert';
 import { useRole } from '@/contexts/RoleContext';
-import { DollarSign, Users, TrendingUp, Clock, Target, Cpu, Brain, Zap, Download, Info, X } from 'lucide-react';
+import { DollarSign, Users, TrendingUp, Clock, Target, Cpu, Brain, Zap, Download, Info } from 'lucide-react';
 import { departmentStats, monthlyMetrics, m3Benchmarks } from '@/lib/mockData';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { toast } from 'sonner';
+
+// LAB10 Chart Colors (direct hex for Recharts compatibility)
+const chartColors = {
+  primary: '#FDE047',
+  secondary: '#A78BFA',
+  softBlue: '#60A5FA',
+  grid: '#333333',
+  axis: '#9ca3af',
+  tooltipBg: '#171717',
+  tooltipBorder: '#333333',
+};
 
 const totalEmployees = 500;
 const activeUsers = departmentStats.reduce((sum, d) => sum + d.activeUsers, 0);
@@ -36,14 +47,22 @@ export default function Dashboard() {
       <SmartAlert type="info" message="El Net AI Value es negativo pero la tendencia es positiva. Esto es esperado en Mes 3 de implementación." className="mb-6" />
       <div className="p-6 rounded-xl bg-card border border-border">
         <h3 className="text-lg font-semibold mb-4">Tendencia de ROI</h3>
-        <div className="h-64">
+        <div className="h-[350px] w-full">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={monthlyMetrics}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" />
-              <YAxis stroke="hsl(var(--muted-foreground))" />
-              <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px' }} />
-              <Line type="monotone" dataKey="roi" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ fill: 'hsl(var(--primary))' }} />
+              <CartesianGrid strokeDasharray="3 3" stroke={chartColors.grid} />
+              <XAxis dataKey="month" stroke={chartColors.axis} tick={{ fill: chartColors.axis }} />
+              <YAxis stroke={chartColors.axis} tick={{ fill: chartColors.axis }} />
+              <Tooltip 
+                contentStyle={{ 
+                  backgroundColor: chartColors.tooltipBg, 
+                  borderColor: chartColors.tooltipBorder, 
+                  color: '#fff',
+                  borderRadius: '8px'
+                }}
+                labelStyle={{ color: chartColors.axis }}
+              />
+              <Line type="monotone" dataKey="roi" stroke={chartColors.primary} strokeWidth={2} dot={{ fill: chartColors.primary }} />
             </LineChart>
           </ResponsiveContainer>
         </div>
@@ -61,14 +80,22 @@ export default function Dashboard() {
       <SmartAlert type="warning" message="⚠️ Alto costo de oportunidad detectado en equipo Operations ($18,500)" className="mb-6" />
       <div className="p-6 rounded-xl bg-card border border-border">
         <h3 className="text-lg font-semibold mb-4">Costos vs Beneficios por Mes</h3>
-        <div className="h-64">
+        <div className="h-[350px] w-full">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={monthlyMetrics}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" />
-              <YAxis stroke="hsl(var(--muted-foreground))" />
-              <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px' }} />
-              <Bar dataKey="netAIValue" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+              <CartesianGrid strokeDasharray="3 3" stroke={chartColors.grid} />
+              <XAxis dataKey="month" stroke={chartColors.axis} tick={{ fill: chartColors.axis }} />
+              <YAxis stroke={chartColors.axis} tick={{ fill: chartColors.axis }} />
+              <Tooltip 
+                contentStyle={{ 
+                  backgroundColor: chartColors.tooltipBg, 
+                  borderColor: chartColors.tooltipBorder, 
+                  color: '#fff',
+                  borderRadius: '8px'
+                }}
+                labelStyle={{ color: chartColors.axis }}
+              />
+              <Bar dataKey="netAIValue" fill={chartColors.primary} radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -97,14 +124,22 @@ export default function Dashboard() {
       <SmartAlert type="warning" message="⚠️ Equipos Legal y HR por debajo del umbral de activación. Considerar training adicional." className="mb-6" />
       <div className="p-6 rounded-xl bg-card border border-border">
         <h3 className="text-lg font-semibold mb-4">Adopción por Departamento</h3>
-        <div className="h-64">
+        <div className="h-[350px] w-full">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={departmentStats} layout="vertical">
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis type="number" domain={[0, 100]} stroke="hsl(var(--muted-foreground))" />
-              <YAxis dataKey="name" type="category" stroke="hsl(var(--muted-foreground))" width={100} />
-              <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px' }} />
-              <Bar dataKey="activationRate" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+              <CartesianGrid strokeDasharray="3 3" stroke={chartColors.grid} />
+              <XAxis type="number" domain={[0, 100]} stroke={chartColors.axis} tick={{ fill: chartColors.axis }} />
+              <YAxis dataKey="name" type="category" stroke={chartColors.axis} tick={{ fill: chartColors.axis }} width={100} />
+              <Tooltip 
+                contentStyle={{ 
+                  backgroundColor: chartColors.tooltipBg, 
+                  borderColor: chartColors.tooltipBorder, 
+                  color: '#fff',
+                  borderRadius: '8px'
+                }}
+                labelStyle={{ color: chartColors.axis }}
+              />
+              <Bar dataKey="activationRate" fill={chartColors.primary} radius={[0, 4, 4, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
