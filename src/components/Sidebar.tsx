@@ -10,7 +10,7 @@ const navItems = [
   { path: '/stakeholder', label: 'Vista Stakeholder', icon: UsersRound },
   { path: '/calculator', label: 'Calculadora ROI', icon: Calculator },
   { path: '/projects', label: 'Portafolio Proyectos', icon: Briefcase },
-  { path: '/alerts', label: 'Alertas', icon: AlertTriangle, showBadge: true },
+  { path: '/alerts', label: 'AI Guardian', icon: AlertTriangle, showBadge: true },
   { path: '/settings', label: 'Configuración', icon: Settings },
 ];
 
