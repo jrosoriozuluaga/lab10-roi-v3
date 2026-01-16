@@ -134,31 +134,32 @@ export async function gatherContextData(): Promise<DashboardContext> {
     ];
   }
 
-  // Fetch ROI trend from monthly_metrics
+  // Fetch ROI trend from roi_calculations (single source of truth)
   let roiTrend: DashboardContext['roiTrend'] = [];
   
   try {
-    const { data: metricsData, error } = await supabase
-      .from('monthly_metrics')
-      .select('month_label, monthly_roi')
+    const { data: roiData, error } = await supabase
+      .from('roi_calculations')
+      .select('month_label, cumulative_roi')
       .order('month_index', { ascending: true });
 
-    if (!error && metricsData) {
-      roiTrend = metricsData.map(m => ({
+    if (!error && roiData) {
+      roiTrend = roiData.map(m => ({
         month: m.month_label,
-        value: m.monthly_roi,
+        value: Number(m.cumulative_roi),
       }));
     }
   } catch (e) {
     console.log('Using fallback ROI data');
   }
 
-  // Fallback ROI trend
+  // Fallback ROI trend (aligned with roi_calculations)
   if (roiTrend.length === 0) {
     roiTrend = [
-      { month: 'Mes 1', value: -80 },
-      { month: 'Mes 2', value: -40 },
-      { month: 'Mes 3', value: 3 },
+      { month: 'Mes 0', value: -100 },
+      { month: 'Mes 1', value: -91.7 },
+      { month: 'Mes 2', value: -81.3 },
+      { month: 'Mes 3', value: -68.7 },
     ];
   }
 

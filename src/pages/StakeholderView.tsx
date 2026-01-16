@@ -5,6 +5,7 @@ import { SmartAlert } from '@/components/SmartAlert';
 import { useRole, Role } from '@/contexts/RoleContext';
 import { DollarSign, Users, TrendingUp, Clock, Target, Cpu, Brain, Zap, ChevronDown, Cloud, Server, TrendingDown, Minus, ShieldCheck, Wallet, PiggyBank, CheckCircle, AlertTriangle, Lightbulb, ArrowRight, FolderKanban } from 'lucide-react';
 import { useSummaryMetrics, useMonthlyMetrics, useFinancialSettings, useDepartmentStats, useProjects, transformMetricsForCharts } from '@/hooks/useMetrics';
+import { useBusinessMetrics, transformForChart } from '@/hooks/useBusinessMetrics';
 import { m3Benchmarks, apiConsumption, cloudInfrastructure, infrastructureTrend, aiToolsDistribution, totalAPICost, totalInfraCost, budgetUtilization, generateAlerts } from '@/lib/mockData';
 import { Link } from 'react-router-dom';
 import { useEmployees } from '@/hooks/useMetrics';
@@ -63,8 +64,12 @@ export default function StakeholderView() {
     data: projects,
     isLoading: loadingProjects
   } = useProjects();
+  // Use BusinessMetrics as single source of truth for ROI data
+  const { timeline: roiTimeline, current: roiCurrent, isLoading: loadingROI } = useBusinessMetrics();
+  const roiChartData = transformForChart(roiTimeline);
+  
   const chartData = metrics ? transformMetricsForCharts(metrics) : [];
-  const isLoading = loadingSummary || loadingMetrics || loadingSettings;
+  const isLoading = loadingSummary || loadingMetrics || loadingSettings || loadingROI;
 
   // Calculate derived values from real data
   const totalEmployees = summary?.totalEmployees || 512;
@@ -76,12 +81,12 @@ export default function StakeholderView() {
   // Financial calculations from metrics
   const latestMetrics = metrics?.[metrics.length - 1];
   const totalCashOutflow = metrics?.reduce((sum, m) => sum + m.cash_outflow, 0) || 250000;
-  const totalValueRealized = latestMetrics?.cumulative_value || 0;
-  const totalAmortizedCost = metrics?.reduce((sum, m) => sum + m.amortized_cost, 0) || 0;
-  const netAIValue = totalValueRealized - totalAmortizedCost;
+  const totalValueRealized = roiCurrent?.cumulative_net_value ? Number(roiCurrent.cumulative_net_value) + Number(roiCurrent.cumulative_costs) : 0;
+  const totalAmortizedCost = roiCurrent?.cumulative_costs ? Number(roiCurrent.cumulative_costs) : 0;
+  const netAIValue = roiCurrent?.cumulative_net_value ? Number(roiCurrent.cumulative_net_value) : 0;
 
-  // Cumulative ROI = (cumulative_value - cumulative_amortized) / cumulative_amortized * 100
-  const cumulativeROI = totalAmortizedCost > 0 ? (totalValueRealized - totalAmortizedCost) / totalAmortizedCost * 100 : 0;
+  // Use cumulative_roi directly from roi_calculations (single source of truth)
+  const cumulativeROI = roiCurrent?.cumulative_roi ? Number(roiCurrent.cumulative_roi) : 0;
   const handleRoleChange = (newRole: Role) => {
     setSelectedRole(newRole);
     setRole(newRole);
@@ -161,8 +166,8 @@ export default function StakeholderView() {
       <div className="p-6 rounded-xl bg-card border border-border">
         <h3 className="text-lg font-semibold mb-4">Tendencia de ROI Acumulativo (Curva J)</h3>
         <div className="h-[350px] w-full">
-          {loadingMetrics ? <Skeleton className="h-full w-full" /> : <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={chartData}>
+          {loadingROI ? <Skeleton className="h-full w-full" /> : <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={roiChartData}>
                 <defs>
                   <linearGradient id="roiGradient" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor={chartColors.primary} stopOpacity={0.4} />
@@ -190,7 +195,7 @@ export default function StakeholderView() {
               borderRadius: '8px'
             }} labelStyle={{
               color: chartColors.axis
-            }} formatter={(value: number) => [`${Math.round(value)}%`, 'ROI Acumulativo']} />
+            }} formatter={(value: number) => [`${Math.round(value * 10) / 10}%`, 'ROI Acumulativo']} />
                 <Area type="monotone" dataKey="roi" stroke={chartColors.primary} strokeWidth={2} fill="url(#roiGradient)" dot={{
               fill: chartColors.primary,
               strokeWidth: 2,
