@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { RoleProvider, useRole } from "@/contexts/RoleContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
+import { AuthGate } from "@/components/AuthGate";
 import { RoleGate } from "@/components/RoleGate";
 import Dashboard from "./pages/Dashboard";
 import StakeholderView from "./pages/StakeholderView";
@@ -13,6 +14,7 @@ import AdoptionMetrics from "./pages/AdoptionMetrics";
 import ProjectsPortfolio from "./pages/ProjectsPortfolio";
 import ActiveAlerts from "./pages/ActiveAlerts";
 import Settings from "./pages/Settings";
+import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -38,18 +40,29 @@ function AppContent() {
   );
 }
 
+function ProtectedApp() {
+  return (
+    <AuthGate>
+      <RoleProvider>
+        <AppContent />
+      </RoleProvider>
+    </AuthGate>
+  );
+}
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider>
-      <RoleProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <AppContent />
-          </BrowserRouter>
-        </TooltipProvider>
-      </RoleProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/*" element={<ProtectedApp />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
     </ThemeProvider>
   </QueryClientProvider>
 );

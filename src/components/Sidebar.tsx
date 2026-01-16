@@ -1,8 +1,10 @@
-import { NavLink, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Calculator, Briefcase, AlertTriangle, Settings, Sun, Moon, UsersRound } from 'lucide-react';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { LayoutDashboard, Calculator, Briefcase, AlertTriangle, Settings, Sun, Moon, UsersRound, LogOut } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useAuth } from '@/hooks/useAuth';
 import { criticalAlertCount } from '@/lib/mockData';
 import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 import lab10LogoIcon from '@/assets/lab10-logo-icon.png';
 
 const navItems = [
@@ -16,7 +18,19 @@ const navItems = [
 
 export function Sidebar() {
   const location = useLocation();
+  const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
+  const { signOut, user } = useAuth();
+
+  const handleSignOut = async () => {
+    const { error } = await signOut();
+    if (error) {
+      toast.error('Error al cerrar sesión');
+    } else {
+      toast.success('Sesión cerrada');
+      navigate('/auth');
+    }
+  };
 
   return (
     <aside className="fixed left-0 top-0 h-screen w-64 bg-sidebar border-r border-sidebar-border flex flex-col">
@@ -61,7 +75,14 @@ export function Sidebar() {
       </nav>
 
       {/* Bottom Section */}
-      <div className="p-4 border-t border-sidebar-border">
+      <div className="p-4 border-t border-sidebar-border space-y-2">
+        {/* User Email */}
+        {user?.email && (
+          <div className="px-4 py-2 text-xs text-muted-foreground truncate">
+            {user.email}
+          </div>
+        )}
+        
         {/* Theme Toggle */}
         <Button
           variant="ghost"
@@ -79,6 +100,16 @@ export function Sidebar() {
               <span>Modo Oscuro</span>
             </>
           )}
+        </Button>
+
+        {/* Logout Button */}
+        <Button
+          variant="ghost"
+          className="w-full justify-start gap-3 text-destructive hover:text-destructive hover:bg-destructive/10"
+          onClick={handleSignOut}
+        >
+          <LogOut className="w-5 h-5" />
+          <span>Cerrar Sesión</span>
         </Button>
       </div>
     </aside>
