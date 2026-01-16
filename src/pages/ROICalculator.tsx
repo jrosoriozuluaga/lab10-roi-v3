@@ -7,9 +7,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { defaultROIInputs } from '@/lib/mockData';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip as RechartsTooltip } from 'recharts';
-
+import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 interface InputWithTipProps {
   label: string;
   tip?: string;
@@ -104,11 +106,69 @@ function SliderWithTip({ label, tip, value, onChange, min, max, step = 0.05 }: S
   );
 }
 
+type ScenarioType = 'pesimista' | 'realista' | 'optimista' | null;
+
+const scenarioPresets = {
+  pesimista: {
+    efficiencyFactor: 0.30,
+    hoursSavedPerWeek: 1,
+    attributionFactor: 0.10,
+    narrative: 'Escenario de baja adopción y alta fricción.'
+  },
+  realista: {
+    efficiencyFactor: 0.55,
+    hoursSavedPerWeek: 2.5,
+    attributionFactor: 0.30,
+    narrative: 'Proyección base según benchmarks actuales.'
+  },
+  optimista: {
+    efficiencyFactor: 0.80,
+    hoursSavedPerWeek: 5,
+    attributionFactor: 0.50,
+    narrative: 'Adopción total y madurez operativa.'
+  }
+} as const;
+
 export default function ROICalculator() {
   const [inputs, setInputs] = useState(defaultROIInputs);
+  const [activeScenario, setActiveScenario] = useState<ScenarioType>(null);
 
   const updateInput = (key: keyof typeof inputs, value: number) => {
     setInputs((prev) => ({ ...prev, [key]: value }));
+    // Clear scenario if user manually changes a controlled input
+    if (['efficiencyFactor', 'hoursSavedPerWeek', 'attributionFactor'].includes(key)) {
+      setActiveScenario(null);
+    }
+  };
+
+  const handleScenarioChange = (value: string) => {
+    if (!value) {
+      setActiveScenario(null);
+      return;
+    }
+    
+    const scenario = value as ScenarioType;
+    if (!scenario) return;
+    
+    setActiveScenario(scenario);
+    
+    const preset = scenarioPresets[scenario];
+    setInputs(prev => ({
+      ...prev,
+      efficiencyFactor: preset.efficiencyFactor,
+      hoursSavedPerWeek: preset.hoursSavedPerWeek,
+      attributionFactor: preset.attributionFactor,
+    }));
+    
+    const labels = {
+      pesimista: 'Pesimista',
+      realista: 'Realista', 
+      optimista: 'Optimista'
+    };
+    
+    toast.info(`🔄 Valores ajustados al escenario ${labels[scenario]}.`, {
+      description: preset.narrative
+    });
   };
 
   // Calculate Hidden Cost (Learning Curve)
@@ -179,6 +239,53 @@ export default function ROICalculator() {
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
         {/* Left Panel - Inputs */}
         <div className="space-y-6">
+          {/* Scenario Toggle */}
+          <div className="p-4 rounded-xl bg-card border border-border">
+            <Label className="text-sm text-muted-foreground mb-3 block">
+              Escenario de Proyección
+            </Label>
+            <ToggleGroup 
+              type="single" 
+              value={activeScenario || ''} 
+              onValueChange={handleScenarioChange}
+              className="justify-start gap-2"
+            >
+              <ToggleGroupItem 
+                value="pesimista" 
+                className={cn(
+                  "px-4 py-2 rounded-lg border transition-all",
+                  activeScenario === 'pesimista' 
+                    ? 'bg-[#FDE047] text-black border-[#FDE047] font-semibold' 
+                    : 'bg-transparent text-foreground border-border hover:border-[#FDE047]/50'
+                )}
+              >
+                🌧️ Pesimista
+              </ToggleGroupItem>
+              <ToggleGroupItem 
+                value="realista" 
+                className={cn(
+                  "px-4 py-2 rounded-lg border transition-all",
+                  activeScenario === 'realista' 
+                    ? 'bg-[#FDE047] text-black border-[#FDE047] font-semibold' 
+                    : 'bg-transparent text-foreground border-border hover:border-[#FDE047]/50'
+                )}
+              >
+                🌤️ Realista
+              </ToggleGroupItem>
+              <ToggleGroupItem 
+                value="optimista" 
+                className={cn(
+                  "px-4 py-2 rounded-lg border transition-all",
+                  activeScenario === 'optimista' 
+                    ? 'bg-[#FDE047] text-black border-[#FDE047] font-semibold' 
+                    : 'bg-transparent text-foreground border-border hover:border-[#FDE047]/50'
+                )}
+              >
+                🚀 Optimista
+              </ToggleGroupItem>
+            </ToggleGroup>
+          </div>
+
           {/* Costs Section */}
           <div className="p-6 rounded-xl bg-card border border-destructive/20">
             <div className="flex items-center gap-2 mb-6">
@@ -468,7 +575,10 @@ export default function ROICalculator() {
           <Button
             variant="outline"
             className="w-full"
-            onClick={() => setInputs(defaultROIInputs)}
+            onClick={() => {
+              setInputs(defaultROIInputs);
+              setActiveScenario(null);
+            }}
           >
             Restablecer valores por defecto
           </Button>
