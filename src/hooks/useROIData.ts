@@ -81,7 +81,7 @@ export function useUnifiedROIMetrics() {
   // Get key metrics from the latest calculation
   const currentMonthROI = Number(latest.monthly_roi);
   const cumulativeROI = Number(latest.cumulative_roi);
-  const netAIValue = Number(latest.net_ai_value);
+  const monthlyNetBenefit = Number(latest.monthly_net_benefit);  // beneficio del mes (no acumulado)
   const cumulativeNetValue = Number(latest.cumulative_net_value);
   const totalBenefits = Number(latest.total_benefits);
   const totalCosts = Number(latest.total_costs);
@@ -102,7 +102,7 @@ export function useUnifiedROIMetrics() {
       // Current month metrics
       currentMonthROI,
       cumulativeROI,
-      netAIValue,
+      monthlyNetBenefit,  // beneficio neto del mes actual
       cumulativeNetValue,
       totalBenefits,
       totalCosts,

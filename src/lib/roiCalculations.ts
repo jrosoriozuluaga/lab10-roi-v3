@@ -58,7 +58,7 @@ export interface ROICalculation {
   monthly_costs: number;
   hidden_costs: number;
   total_costs: number;
-  net_ai_value: number;
+  monthly_net_benefit: number;  // total_benefits - monthly_costs (beneficio neto del MES, no acumulado)
   monthly_roi: number;
   cumulative_net_value: number;
   cumulative_roi: number;
@@ -228,7 +228,7 @@ export function transformCalculationsForCharts(calculations: ROICalculation[]) {
     month: calc.month_label,
     roi: Math.round(Number(calc.cumulative_roi) * 10) / 10,
     monthlyRoi: Math.round(Number(calc.monthly_roi) * 10) / 10,
-    netValue: Number(calc.net_ai_value),
+    netValue: Number(calc.monthly_net_benefit),
     cumulativeNetValue: Number(calc.cumulative_net_value),
     totalBenefits: Number(calc.total_benefits),
     totalCosts: Number(calc.total_costs),

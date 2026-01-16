@@ -21,7 +21,7 @@ export interface ROICalculation {
   monthly_costs: number;
   hidden_costs: number;
   total_costs: number;
-  net_ai_value: number;
+  monthly_net_benefit: number;  // beneficio neto del MES (total_benefits - monthly_costs)
   monthly_roi: number;
   cumulative_roi: number;
   cumulative_net_value: number;

@@ -25,9 +25,17 @@ AVAILABLE DATA TABLES:
    - Savings: gross_fte_savings, net_fte_savings, license_savings, outsourcing_reduction, total_hard_savings
    - Revenue: gross_revenue, net_revenue
    - Cost Avoidance: downtime_reduction, fraud_prevention, rework_reduction, compliance_savings, total_cost_avoidance
-   - Totals: total_benefits, monthly_costs, hidden_costs, total_costs, net_ai_value
-   - ROI Metrics: monthly_roi (%), cumulative_roi (%), cumulative_net_value, cumulative_costs
+   - Totals: total_benefits, monthly_costs, hidden_costs, total_costs
+   - **IMPORTANT** monthly_net_benefit: Beneficio neto del MES SOLAMENTE (total_benefits - monthly_costs). NO confundir con valor total.
+   - ROI Metrics: monthly_roi (%), cumulative_roi (%), cumulative_net_value (balance total incluyendo inversión), cumulative_costs
    - Factors used: efficiency_factor_used, attribution_factor_used
+
+⚠️ CRITICAL - INTERPRETACIÓN DE MÉTRICAS:
+- monthly_net_benefit: Beneficio de ESE MES (positivo desde M1 porque genera más de lo que cuesta mensualmente)
+- cumulative_net_value: Balance TOTAL incluyendo inversión inicial (negativo mientras no se recupere la inversión)
+- cumulative_roi: ROI REAL respecto a inversión total (negativo mientras estemos recuperando inversión)
+
+REGLA: Cuando hables de "generar valor" o "ROI positivo", usa cumulative_net_value y cumulative_roi, NO monthly_net_benefit.
 
 2. **roiSettings** - Methodology parameters (from roi_settings table):
    - efficiency_factor (55%): Productive time ratio

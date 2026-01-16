@@ -193,8 +193,8 @@ export type Database = {
           month_index: number
           month_label: string
           monthly_costs: number
+          monthly_net_benefit: number
           monthly_roi: number
-          net_ai_value: number
           net_fte_savings: number
           net_revenue: number
           outsourcing_reduction: number
@@ -223,8 +223,8 @@ export type Database = {
           month_index: number
           month_label: string
           monthly_costs?: number
+          monthly_net_benefit?: number
           monthly_roi?: number
-          net_ai_value?: number
           net_fte_savings?: number
           net_revenue?: number
           outsourcing_reduction?: number
@@ -253,8 +253,8 @@ export type Database = {
           month_index?: number
           month_label?: string
           monthly_costs?: number
+          monthly_net_benefit?: number
           monthly_roi?: number
-          net_ai_value?: number
           net_fte_savings?: number
           net_revenue?: number
           outsourcing_reduction?: number
