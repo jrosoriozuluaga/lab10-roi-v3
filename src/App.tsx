@@ -21,14 +21,12 @@ function AppContent() {
   }
 
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Dashboard />} />
-        <Route path="/calculator" element={<ROICalculator />} />
-        <Route path="/adoption" element={<AdoptionMetrics />} />
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-    </BrowserRouter>
+    <Routes>
+      <Route path="/" element={<Dashboard />} />
+      <Route path="/calculator" element={<ROICalculator />} />
+      <Route path="/adoption" element={<AdoptionMetrics />} />
+      <Route path="*" element={<NotFound />} />
+    </Routes>
   );
 }
 
@@ -39,7 +37,9 @@ const App = () => (
         <TooltipProvider>
           <Toaster />
           <Sonner />
-          <AppContent />
+          <BrowserRouter>
+            <AppContent />
+          </BrowserRouter>
         </TooltipProvider>
       </RoleProvider>
     </ThemeProvider>
