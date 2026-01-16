@@ -241,9 +241,9 @@ export const defaultROIInputs = {
   numberOfUsers: 500,
   
   // Savings
-  hoursSavedPerWeek: 3,
+  hoursSavedPerWeek: 0.5,
   avgHourlyRate: 55,
-  efficiencyFactor: 0.55,
+  efficiencyFactor: 0.50,
   licenseSavings: 3000,
   outsourcingReduction: 5000,
   
