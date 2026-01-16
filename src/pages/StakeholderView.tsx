@@ -489,7 +489,6 @@ export default function StakeholderView() {
                   <TableHead className="text-right">Costo Amortizado</TableHead>
                   <TableHead className="text-right">Valor Generado</TableHead>
                   <TableHead className="text-right">ROI Mensual</TableHead>
-                  <TableHead className="text-right">Payback Acum.</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -508,9 +507,6 @@ export default function StakeholderView() {
                     <TableCell className={`text-right font-semibold ${row.monthlyRoi >= 0 ? 'text-success' : 'text-destructive'}`}>
                       {row.monthlyRoi >= 0 ? '+' : ''}{row.monthlyRoi}%
                     </TableCell>
-                    <TableCell className="text-right">
-                      {row.cumulativePaybackPct}%
-                    </TableCell>
                   </TableRow>
                 ))}
                 {/* Totals Row */}
@@ -527,9 +523,6 @@ export default function StakeholderView() {
                   </TableCell>
                   <TableCell className={`text-right font-bold ${cumulativeROI >= 0 ? 'text-success' : 'text-destructive'}`}>
                     {cumulativeROI >= 0 ? '+' : ''}{cumulativeROI.toFixed(1)}%
-                  </TableCell>
-                  <TableCell className="text-right font-bold">
-                    {latestMetrics?.cumulative_payback_pct || 0}%
                   </TableCell>
                 </TableRow>
               </TableBody>
