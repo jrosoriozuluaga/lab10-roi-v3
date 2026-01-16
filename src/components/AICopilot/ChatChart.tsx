@@ -1,16 +1,17 @@
-import { 
-  BarChart, 
-  Bar, 
-  PieChart, 
-  Pie, 
-  LineChart, 
-  Line, 
-  XAxis, 
-  YAxis, 
-  Tooltip, 
-  ResponsiveContainer, 
-  Cell 
+import {
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  Cell
 } from 'recharts';
+import { motion } from 'framer-motion';
 import { ChartData } from '@/services/RealAiService';
 
 interface ChatChartProps {
@@ -34,18 +35,18 @@ export function ChatChart({ chartData }: ChatChartProps) {
         return (
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={data} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
-              <XAxis 
-                dataKey="name" 
+              <XAxis
+                dataKey="name"
                 tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }}
                 axisLine={{ stroke: 'hsl(var(--border))' }}
               />
-              <YAxis 
+              <YAxis
                 tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }}
                 axisLine={{ stroke: 'hsl(var(--border))' }}
               />
-              <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: 'hsl(var(--popover))', 
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: 'hsl(var(--popover))',
                   border: '1px solid hsl(var(--border))',
                   borderRadius: '8px',
                   fontSize: '12px',
@@ -79,9 +80,9 @@ export function ChatChart({ chartData }: ChatChartProps) {
                   <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
                 ))}
               </Pie>
-              <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: 'hsl(var(--popover))', 
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: 'hsl(var(--popover))',
                   border: '1px solid hsl(var(--border))',
                   borderRadius: '8px',
                   fontSize: '12px',
@@ -95,27 +96,27 @@ export function ChatChart({ chartData }: ChatChartProps) {
         return (
           <ResponsiveContainer width="100%" height={200}>
             <LineChart data={data} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
-              <XAxis 
-                dataKey="name" 
+              <XAxis
+                dataKey="name"
                 tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }}
                 axisLine={{ stroke: 'hsl(var(--border))' }}
               />
-              <YAxis 
+              <YAxis
                 tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }}
                 axisLine={{ stroke: 'hsl(var(--border))' }}
               />
-              <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: 'hsl(var(--popover))', 
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: 'hsl(var(--popover))',
                   border: '1px solid hsl(var(--border))',
                   borderRadius: '8px',
                   fontSize: '12px',
                 }}
               />
-              <Line 
-                type="monotone" 
-                dataKey="value" 
-                stroke="hsl(var(--primary))" 
+              <Line
+                type="monotone"
+                dataKey="value"
+                stroke="hsl(var(--primary))"
                 strokeWidth={2}
                 dot={{ fill: 'hsl(var(--primary))', strokeWidth: 0 }}
               />
@@ -129,11 +130,16 @@ export function ChatChart({ chartData }: ChatChartProps) {
   };
 
   return (
-    <div className="bg-muted/30 rounded-lg p-3 border border-border">
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      className="bg-muted/30 rounded-lg p-3 border border-border"
+    >
       {title && (
         <h4 className="text-xs font-medium text-muted-foreground mb-2">{title}</h4>
       )}
       {renderChart()}
-    </div>
+    </motion.div>
   );
 }

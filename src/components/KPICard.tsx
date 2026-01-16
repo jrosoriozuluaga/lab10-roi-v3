@@ -1,4 +1,5 @@
 import { ReactNode } from 'react';
+import { motion } from 'framer-motion';
 import { LucideIcon, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -47,9 +48,13 @@ export function KPICard({
   const TrendIcon = trend ? trendIcons[trend] : null;
 
   return (
-    <div
+    <motion.div
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      whileHover={{ scale: 1.02 }}
+      transition={{ duration: 0.2 }}
       className={cn(
-        'p-6 rounded-xl bg-card border transition-all duration-200 hover:shadow-lg',
+        'p-6 rounded-xl bg-card border transition-colors duration-200 hover:shadow-lg',
         variantStyles[variant],
         className
       )}
@@ -79,6 +84,6 @@ export function KPICard({
       </div>
 
       {children && <div className="mt-4">{children}</div>}
-    </div>
+    </motion.div>
   );
 }

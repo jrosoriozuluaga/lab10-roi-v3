@@ -144,7 +144,7 @@ export function settingsToInputs(settings: ROISettings, activeUsers: number): RO
 export function calculateROI(inputs: ROIInputs): ROIResult {
   // Hidden Cost (Learning Curve) - opportunity cost of productivity loss
   const hiddenCost = inputs.numberOfUsers * inputs.learningCurveHours * inputs.avgHourlyCost * inputs.learningCurvePenalty;
-  
+
   // Total Costs
   const totalMonthlyCosts = inputs.monthlyLicenses + (hiddenCost / 12);
   const totalOneTimeCosts = inputs.implementationCost + inputs.trainingBudget;
@@ -208,15 +208,15 @@ export function calculateMonthlyROI(
     efficiencyFactor: efficiencyForMonth,
     attributionFactor: attributionForMonth,
   };
-  
+
   const result = calculateROI(adjustedInputs);
-  
+
   // Monthly values (divide annual by 12)
   const monthlyBenefits = result.totalBenefits / 12;
   const monthlyCosts = result.totalMonthlyCosts + (result.totalOneTimeCosts / 12);
   const monthlyNetValue = monthlyBenefits - monthlyCosts;
   const monthlyROI = monthlyCosts > 0 ? ((monthlyNetValue / monthlyCosts) * 100) : 0;
-  
+
   return { monthlyNetValue, monthlyROI, monthlyCosts };
 }
 
@@ -349,11 +349,11 @@ export function calculateBreakEvenProjection(
   // Get the last 3 months of monthly_net_benefit to calculate growth rate
   const lastMonths = calculations.slice(-3);
   const benefits = lastMonths.map(c => Number(c.monthly_net_benefit));
-  
+
   // Calculate average growth rate
   let avgGrowthRate = 0;
   let growthRates: number[] = [];
-  
+
   if (benefits.length >= 2) {
     for (let i = 1; i < benefits.length; i++) {
       if (benefits[i - 1] > 0) {
@@ -375,22 +375,22 @@ export function calculateBreakEvenProjection(
   // Project future months until break-even or max 24 months
   const projectedValues: BreakEvenProjection['projectedValues'] = [];
   let breakEvenMonth: number | null = null;
-  
+
   // Use conservative growth rate (75% of average) for projection
   const conservativeGrowthRate = avgGrowthRate * 0.75;
-  
+
   for (let month = currentMonth + 1; month <= currentMonth + 24; month++) {
     // Project benefit with conservative growth
     currentBenefit = currentBenefit * (1 + conservativeGrowthRate);
     currentCumulative = currentCumulative + currentBenefit;
-    
+
     projectedValues.push({
       month,
       label: `M${month}`,
       projectedBenefit: Math.round(currentBenefit),
       projectedCumulative: Math.round(currentCumulative),
     });
-    
+
     if (currentCumulative >= 0 && !breakEvenMonth) {
       breakEvenMonth = month;
       break;
@@ -403,8 +403,8 @@ export function calculateBreakEvenProjection(
   // Calculate projected date
   let projectedDate: string | null = null;
   if (breakEvenMonth) {
-    const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
-                       'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+    const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+      'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
     const now = new Date();
     const targetDate = new Date(now.getFullYear(), now.getMonth() + (monthsRemaining || 0));
     projectedDate = `${monthNames[targetDate.getMonth()]} ${targetDate.getFullYear()}`;
@@ -412,12 +412,12 @@ export function calculateBreakEvenProjection(
 
   // Determine confidence based on trend stability and time to break-even
   let confidence: 'high' | 'medium' | 'low' = 'medium';
-  
+
   if (growthRates.length >= 2) {
-    const variance = growthRates.reduce((sum, rate) => 
+    const variance = growthRates.reduce((sum, rate) =>
       sum + Math.pow(rate - avgGrowthRate, 2), 0) / growthRates.length;
     const stdDev = Math.sqrt(variance);
-    
+
     if (stdDev < 0.1 && breakEvenMonth && breakEvenMonth <= 12) {
       confidence = 'high';
     } else if (stdDev > 0.25 || !breakEvenMonth || breakEvenMonth > 18) {

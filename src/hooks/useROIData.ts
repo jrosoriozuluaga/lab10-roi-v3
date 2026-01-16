@@ -15,7 +15,7 @@ export function useROISettings() {
         .from('roi_settings')
         .select('*')
         .maybeSingle();
-      
+
       if (error) throw error;
       return data as ROISettings | null;
     },
@@ -34,7 +34,7 @@ export function useFinancialSettings() {
         .from('financial_settings')
         .select('*')
         .maybeSingle();
-      
+
       if (error) throw error;
       return data;
     },
@@ -54,7 +54,7 @@ export function useROICalculations() {
         .from('roi_calculations')
         .select('*')
         .order('month_index', { ascending: true });
-      
+
       if (error) throw error;
       return (data as ROICalculation[]) || [];
     },
@@ -75,7 +75,7 @@ export function useLatestROICalculation() {
         .order('month_index', { ascending: false })
         .limit(1)
         .maybeSingle();
-      
+
       if (error) throw error;
       return data as ROICalculation | null;
     },
@@ -107,14 +107,14 @@ export function useUnifiedROIMetrics() {
   const totalBenefits = Number(latest.total_benefits);
   const totalCosts = Number(latest.total_costs);
   const cumulativeCosts = Number(latest.cumulative_costs);
-  
+
   // Calculate break-even projection using the new algorithm
   const totalInvestment = financialSettings?.total_investment || 250000;
   const breakEvenProjection = calculateBreakEvenProjection(calculations, totalInvestment);
-  
+
   // Project M12 ROI based on trend
   const lastThreeMonths = calculations.slice(-3);
-  const avgMonthlyGrowth = lastThreeMonths.length >= 2 
+  const avgMonthlyGrowth = lastThreeMonths.length >= 2
     ? (Number(lastThreeMonths[lastThreeMonths.length - 1].cumulative_roi) - Number(lastThreeMonths[0].cumulative_roi)) / lastThreeMonths.length
     : 0;
   const projectedM12ROI = cumulativeROI + (avgMonthlyGrowth * (12 - latest.month_index));

@@ -42,13 +42,15 @@ export function ChatWidget() {
     }
   }, [messages]);
 
-  const handleSend = async () => {
-    if (!input.trim() || isLoading || !contextData) return;
+  const handleSend = async (messageOverride?: string) => {
+    const textToSend = typeof messageOverride === "string" ? messageOverride : input;
+
+    if (!textToSend.trim() || isLoading || !contextData) return;
 
     const userMessage: ChatMessageType = {
       id: Date.now().toString(),
       role: "user",
-      content: input.trim(),
+      content: textToSend.trim(),
       timestamp: new Date(),
     };
 
@@ -57,7 +59,7 @@ export function ChatWidget() {
     setIsLoading(true);
 
     try {
-      const { response, chartData } = await sendMessage(input.trim(), contextData);
+      const { response, chartData } = await sendMessage(textToSend.trim(), contextData);
 
       const assistantMessage: ChatMessageType = {
         id: (Date.now() + 1).toString(),
@@ -122,7 +124,7 @@ export function ChatWidget() {
             </div>
             <div>
               <h3 className="font-semibold text-sm">LAB10 AI Copilot</h3>
-              <p className="text-xs text-muted-foreground">Chief of Staff Assistant</p>
+              <p className="text-xs text-muted-foreground">t</p>
             </div>
           </div>
           <Button
@@ -148,7 +150,7 @@ export function ChatWidget() {
                     (suggestion) => (
                       <button
                         key={suggestion}
-                        onClick={() => setInput(suggestion)}
+                        onClick={() => handleSend(suggestion)}
                         className="block w-full text-left text-xs px-3 py-2 rounded-lg bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
                       >
                         {suggestion}
@@ -187,7 +189,7 @@ export function ChatWidget() {
               className="flex-1 bg-background"
             />
             <Button
-              onClick={handleSend}
+              onClick={() => handleSend()}
               disabled={!input.trim() || isLoading}
               size="icon"
               className="bg-primary hover:bg-primary/90"

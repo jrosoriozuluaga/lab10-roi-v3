@@ -52,17 +52,13 @@ export default function Auth() {
     if (!validateForm()) return;
 
     setIsLoading(true);
-    const { error } = await signIn(email, password);
+    setIsLoading(true);
+    // Mock auth only needs email, but we keep password in UI for "realism"
+    const { error } = await signIn(email);
     setIsLoading(false);
 
     if (error) {
-      if (error.message.includes('Invalid login credentials')) {
-        toast.error('Credenciales inválidas');
-      } else if (error.message.includes('Email not confirmed')) {
-        toast.error('Por favor confirma tu email antes de iniciar sesión');
-      } else {
-        toast.error(error.message);
-      }
+      toast.error(error.message);
     } else {
       toast.success('¡Bienvenido!');
       navigate('/');
@@ -74,17 +70,15 @@ export default function Auth() {
     if (!validateForm()) return;
 
     setIsLoading(true);
-    const { error } = await signUp(email, password);
+    setIsLoading(true);
+    const { error } = await signUp(email);
     setIsLoading(false);
 
     if (error) {
-      if (error.message.includes('User already registered')) {
-        toast.error('Este email ya está registrado');
-      } else {
-        toast.error(error.message);
-      }
+      toast.error(error.message);
     } else {
-      toast.success('¡Cuenta creada! Puedes iniciar sesión ahora.');
+      toast.success('¡Cuenta creada! Has iniciado sesión automáticamente.');
+      navigate('/');
     }
   };
 

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Calculator, DollarSign, TrendingUp, Clock, Info, Lightbulb, Scale, Activity } from 'lucide-react';
 import { DashboardLayout } from '@/components/DashboardLayout';
+import { FormulaWizard } from '@/components/FormulaWizard';
 import { KPICard } from '@/components/KPICard';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -84,7 +85,7 @@ interface SliderWithTipProps {
 
 function SliderWithTip({ label, tip, value, onChange, min, max, step = 0.05, inputKey, onFocus, onBlur }: SliderWithTipProps) {
   return (
-    <div 
+    <div
       className="space-y-3"
       onMouseEnter={onFocus}
       onMouseLeave={onBlur}
@@ -162,11 +163,14 @@ const defaultInputs: ROIInputs = {
   reworkReduction: 1200,
 };
 
+import { ScenarioGuideModal } from '@/components/ScenarioGuideModal';
+
 export default function ROICalculator() {
   const { data: roiSettings, isLoading: loadingSettings } = useROISettings();
   const [inputs, setInputs] = useState<ROIInputs>(defaultInputs);
   const [activeScenario, setActiveScenario] = useState<ScenarioType>(null);
   const [comparisonOpen, setComparisonOpen] = useState(false);
+  const [guideOpen, setGuideOpen] = useState(false);
   const [activeInput, setActiveInput] = useState<string | null>(null);
   const [initialized, setInitialized] = useState(false);
 
@@ -192,12 +196,12 @@ export default function ROICalculator() {
       setActiveScenario(null);
       return;
     }
-    
+
     const scenario = value as ScenarioType;
     if (!scenario) return;
-    
+
     setActiveScenario(scenario);
-    
+
     const preset = scenarioPresets[scenario];
     setInputs(prev => ({
       ...prev,
@@ -205,13 +209,13 @@ export default function ROICalculator() {
       hoursSavedPerWeek: preset.hoursSavedPerWeek,
       attributionFactor: preset.attributionFactor,
     }));
-    
+
     const labels = {
       pesimista: 'Pesimista',
-      realista: 'Realista', 
+      realista: 'Realista',
       optimista: 'Optimista'
     };
-    
+
     toast.info(`🔄 Valores ajustados al escenario ${labels[scenario]}.`, {
       description: preset.narrative
     });
@@ -219,7 +223,7 @@ export default function ROICalculator() {
 
   // Use unified calculation function
   const roiResult = calculateROI(inputs);
-  
+
   // Destructure for easy access (maintaining backwards compatibility with rest of component)
   const {
     hiddenCost,
@@ -270,43 +274,62 @@ export default function ROICalculator() {
       hoursSavedPerWeek: preset.hoursSavedPerWeek,
       attributionFactor: preset.attributionFactor,
     };
-    
+
     const grossFTE = tempInputs.numberOfUsers * tempInputs.hoursSavedPerWeek * 52 * tempInputs.avgHourlyRate;
     const netFTE = grossFTE * tempInputs.efficiencyFactor;
     const hardSavings = netFTE + (tempInputs.licenseSavings * 12) + (tempInputs.outsourcingReduction * 12);
     const netRev = (tempInputs.monthlyRevenueUplift * 12) * tempInputs.attributionFactor;
-    const costAvoid = (tempInputs.downtimeReduction + tempInputs.complianceSavings + 
-                       tempInputs.fraudPrevention + tempInputs.reworkReduction) * 12;
+    const costAvoid = (tempInputs.downtimeReduction + tempInputs.complianceSavings +
+      tempInputs.fraudPrevention + tempInputs.reworkReduction) * 12;
     const benefits = hardSavings + netRev + costAvoid;
     const costs = annualizedCosts;
     const netValue = benefits - costs;
     const roiPercent = costs > 0 ? ((netValue / costs) * 100) : 0;
     const payback = (benefits / 12) > 0 ? Math.ceil(costs / (benefits / 12)) : Infinity;
-    
+
     return { roi: roiPercent, netValue, paybackMonths: payback };
   };
 
-  // Sensitivity data for tornado chart
+  // Dynamic Sensitivity Analysis
+  // Measures the absolute impact on Net AI Value of a 10% increase in the variable
+  const calculateSensitivity = (baseValue: number, currentNetValue: number, inputKey: keyof ROIInputs) => {
+    // Clone inputs and increase target variable by 10%
+    const variedInputs = { ...inputs, [inputKey]: inputs[inputKey] * 1.10 };
+
+    // For Efficiency Factor, we cap at 1.0 to avoid unrealistic math
+    if (inputKey === 'efficiencyFactor' && variedInputs.efficiencyFactor > 0.95) {
+      variedInputs.efficiencyFactor = 0.95;
+    }
+
+    const variedResult = calculateROI(variedInputs);
+    // Impact is the absolute deviation from the base Net Value
+    return Math.abs(variedResult.netAIValue - currentNetValue);
+  };
+
+  // Base Net Value
+  const baseNetValue = roiResult.netAIValue;
+
   const sensitivityData = [
-    { 
-      variable: 'Eficiencia (η)', 
+    {
+      variable: 'Eficiencia (η)',
       key: 'efficiencyFactor',
-      impact: 85,
+      // Impact of 10% better efficiency
+      impact: calculateSensitivity(inputs.efficiencyFactor, baseNetValue, 'efficiencyFactor'),
       fill: activeInput === 'efficiencyFactor' ? '#FDE047' : 'hsl(142, 76%, 36%)'
     },
-    { 
-      variable: 'Adopción (MAU)', 
+    {
+      variable: 'Adopción (Users)',
       key: 'numberOfUsers',
-      impact: 55,
+      impact: calculateSensitivity(inputs.numberOfUsers, baseNetValue, 'numberOfUsers'),
       fill: activeInput === 'numberOfUsers' ? '#FDE047' : 'hsl(213, 94%, 68%)'
     },
-    { 
-      variable: 'Costo Licencias', 
+    {
+      variable: 'Costo Licencias',
       key: 'monthlyLicenses',
-      impact: 18,
+      impact: calculateSensitivity(inputs.monthlyLicenses, baseNetValue, 'monthlyLicenses'),
       fill: activeInput === 'monthlyLicenses' ? '#FDE047' : 'hsl(0, 84%, 60%)'
     },
-  ];
+  ].sort((a, b) => b.impact - a.impact); // Sort by highest impact
 
   // Dynamic insight based on active input
   const getInsightText = () => {
@@ -314,7 +337,7 @@ export default function ROICalculator() {
       return (
         <>
           <span className="font-semibold text-foreground">Ajustando:</span>{' '}
-          La <span className="text-[#FDE047] font-semibold">Eficiencia</span> es tu palanca de mayor impacto. 
+          La <span className="text-[#FDE047] font-semibold">Eficiencia</span> es tu palanca de mayor impacto.
           Cada 10% de mejora multiplica el ROI.
         </>
       );
@@ -323,7 +346,7 @@ export default function ROICalculator() {
       return (
         <>
           <span className="font-semibold text-foreground">Ajustando:</span>{' '}
-          La <span className="text-[#FDE047] font-semibold">Adopción</span> escala linealmente. 
+          La <span className="text-[#FDE047] font-semibold">Adopción</span> escala linealmente.
           Más usuarios = más ahorro, pero también más costos de licencias.
         </>
       );
@@ -332,7 +355,7 @@ export default function ROICalculator() {
       return (
         <>
           <span className="font-semibold text-foreground">Ajustando:</span>{' '}
-          El <span className="text-[#FDE047] font-semibold">Costo de Licencias</span> tiene bajo impacto relativo. 
+          El <span className="text-[#FDE047] font-semibold">Costo de Licencias</span> tiene bajo impacto relativo.
           No negocies descuentos, enfócate en adopción.
         </>
       );
@@ -340,7 +363,7 @@ export default function ROICalculator() {
     return (
       <>
         <span className="font-semibold text-foreground">Insight:</span>{' '}
-        La Eficiencia tiene <span className="text-[#FDE047] font-semibold">3x más impacto</span> en tu ROI que el costo de las licencias. 
+        La Eficiencia tiene <span className="text-[#FDE047] font-semibold">3x más impacto</span> en tu ROI que el costo de las licencias.
         Enfócate en Training, no en descuentos.
       </>
     );
@@ -355,7 +378,7 @@ export default function ROICalculator() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Left Panel - Inputs */}
         <div className="space-y-6">
           {/* Scenario Toggle */}
@@ -364,56 +387,67 @@ export default function ROICalculator() {
               Escenario de Proyección
             </Label>
             <div className="flex items-center gap-4 flex-wrap">
-              <ToggleGroup 
-                type="single" 
-                value={activeScenario || ''} 
+              <ToggleGroup
+                type="single"
+                value={activeScenario || ''}
                 onValueChange={handleScenarioChange}
                 className="justify-start gap-2"
               >
-                <ToggleGroupItem 
-                  value="pesimista" 
+                <ToggleGroupItem
+                  value="pesimista"
                   className={cn(
                     "px-4 py-2 rounded-lg border transition-all",
-                    activeScenario === 'pesimista' 
-                      ? 'bg-[#FDE047] text-black border-[#FDE047] font-semibold' 
+                    activeScenario === 'pesimista'
+                      ? 'bg-[#FDE047] text-black border-[#FDE047] font-semibold'
                       : 'bg-transparent text-foreground border-border hover:border-[#FDE047]/50'
                   )}
                 >
                   🌧️ Pesimista
                 </ToggleGroupItem>
-                <ToggleGroupItem 
-                  value="realista" 
+                <ToggleGroupItem
+                  value="realista"
                   className={cn(
                     "px-4 py-2 rounded-lg border transition-all",
-                    activeScenario === 'realista' 
-                      ? 'bg-[#FDE047] text-black border-[#FDE047] font-semibold' 
+                    activeScenario === 'realista'
+                      ? 'bg-[#FDE047] text-black border-[#FDE047] font-semibold'
                       : 'bg-transparent text-foreground border-border hover:border-[#FDE047]/50'
                   )}
                 >
                   🌤️ Realista
                 </ToggleGroupItem>
-                <ToggleGroupItem 
-                  value="optimista" 
+                <ToggleGroupItem
+                  value="optimista"
                   className={cn(
                     "px-4 py-2 rounded-lg border transition-all",
-                    activeScenario === 'optimista' 
-                      ? 'bg-[#FDE047] text-black border-[#FDE047] font-semibold' 
+                    activeScenario === 'optimista'
+                      ? 'bg-[#FDE047] text-black border-[#FDE047] font-semibold'
                       : 'bg-transparent text-foreground border-border hover:border-[#FDE047]/50'
                   )}
                 >
                   🚀 Optimista
                 </ToggleGroupItem>
               </ToggleGroup>
-              
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => setComparisonOpen(true)}
-                className="border-[#FDE047]/30 hover:border-[#FDE047] hover:bg-[#FDE047]/10"
-              >
-                <Scale className="w-4 h-4 mr-2" />
-                Comparar Escenarios
-              </Button>
+
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setComparisonOpen(true)}
+                  className="border-[#FDE047]/30 hover:border-[#FDE047] hover:bg-[#FDE047]/10"
+                >
+                  <Scale className="w-4 h-4 mr-2" />
+                  Comparar
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setGuideOpen(true)}
+                  className="text-muted-foreground hover:text-[#FDE047]"
+                  title="Ver guía de escenarios"
+                >
+                  <Info className="w-4 h-4" />
+                </Button>
+              </div>
             </div>
           </div>
 
@@ -640,6 +674,12 @@ export default function ROICalculator() {
             />
           </div>
 
+
+          <div className="flex items-center justify-between mt-6 mb-2">
+            <h3 className="text-sm font-medium text-muted-foreground">Resultados</h3>
+            <FormulaWizard />
+          </div>
+
           <KPICard
             title="Net AI Value (Anual)"
             value={formatCurrency(netAIValue)}
@@ -714,21 +754,26 @@ export default function ROICalculator() {
               <Activity className="w-5 h-5 text-primary" />
               <h3 className="text-lg font-semibold text-foreground">Análisis de Sensibilidad</h3>
             </div>
-            
+
             <div className="h-40">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart 
-                  data={sensitivityData} 
+                <BarChart
+                  data={sensitivityData}
                   layout="vertical"
                   margin={{ left: 10, right: 20, top: 5, bottom: 5 }}
                 >
-                  <XAxis type="number" domain={[0, 100]} unit="%" tick={{ fontSize: 12 }} />
+                  <XAxis type="number" tick={{ fontSize: 12 }} tickFormatter={(val) => `$${(val / 1000).toFixed(0)}k`} />
                   <YAxis type="category" dataKey="variable" width={110} tick={{ fontSize: 12 }} />
                   <ReferenceLine x={0} stroke="hsl(var(--border))" />
+                  <RechartsTooltip
+                    cursor={{ fill: 'transparent' }}
+                    contentStyle={{ borderRadius: '8px', border: '1px solid #333', backgroundColor: '#171717' }}
+                    formatter={(val: number) => [`$${val.toLocaleString()}`, 'Impacto en Net Value (var +10%)']}
+                  />
                   <Bar dataKey="impact" radius={[0, 4, 4, 0]}>
                     {sensitivityData.map((entry, index) => (
-                      <Cell 
-                        key={index} 
+                      <Cell
+                        key={index}
                         fill={entry.fill}
                         className="transition-all duration-200"
                       />
@@ -737,7 +782,7 @@ export default function ROICalculator() {
                 </BarChart>
               </ResponsiveContainer>
             </div>
-            
+
             {/* Dynamic Insight */}
             <div className="mt-4 p-3 rounded-lg bg-primary/5 border border-primary/20">
               <div className="flex items-start gap-2">
@@ -777,7 +822,7 @@ export default function ROICalculator() {
               Comparativa de Escenarios
             </SheetTitle>
           </SheetHeader>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
             {(['pesimista', 'realista', 'optimista'] as const).map((scenario) => {
               const metrics = calculateScenarioMetrics(scenario);
@@ -788,14 +833,14 @@ export default function ROICalculator() {
                 optimista: { emoji: '🚀', label: 'Optimista', subtitle: 'Best Case' },
               };
               const info = scenarioLabels[scenario];
-              
+
               return (
-                <div 
+                <div
                   key={scenario}
                   className={cn(
                     "p-6 rounded-xl bg-card border-2 transition-all",
-                    isRealistic 
-                      ? "border-[#FDE047] shadow-lg shadow-[#FDE047]/20" 
+                    isRealistic
+                      ? "border-[#FDE047] shadow-lg shadow-[#FDE047]/20"
                       : "border-border"
                   )}
                 >
@@ -808,19 +853,19 @@ export default function ROICalculator() {
                       <span className="text-xs text-muted-foreground">{info.subtitle}</span>
                     )}
                   </div>
-                  
+
                   <div className="space-y-4">
                     <div className="text-center p-3 rounded-lg bg-background">
                       <div className={cn(
                         "text-3xl font-bold",
-                        metrics.roi < 0 ? "text-destructive" : 
-                        metrics.roi > 200 ? "text-[#FDE047]" : "text-success"
+                        metrics.roi < 0 ? "text-destructive" :
+                          metrics.roi > 200 ? "text-[#FDE047]" : "text-success"
                       )}>
                         {metrics.roi >= 0 ? '+' : ''}{metrics.roi.toFixed(0)}%
                       </div>
                       <span className="text-xs text-muted-foreground">ROI</span>
                     </div>
-                    
+
                     <div className="text-center p-3 rounded-lg bg-background">
                       <div className={cn(
                         "text-xl font-semibold",
@@ -830,7 +875,7 @@ export default function ROICalculator() {
                       </div>
                       <span className="text-xs text-muted-foreground">Net Value</span>
                     </div>
-                    
+
                     <div className="text-center p-3 rounded-lg bg-background">
                       <div className="text-lg font-medium text-foreground">
                         {metrics.paybackMonths === Infinity ? 'Never' : `${metrics.paybackMonths} meses`}
@@ -844,6 +889,8 @@ export default function ROICalculator() {
           </div>
         </SheetContent>
       </Sheet>
-    </DashboardLayout>
+
+      <ScenarioGuideModal open={guideOpen} onOpenChange={setGuideOpen} />
+    </DashboardLayout >
   );
 }
