@@ -238,15 +238,26 @@ export function useSummaryMetrics() {
 
 // Transform monthly metrics for charts (mock data format compatibility)
 export function transformMetricsForCharts(metrics: MonthlyMetric[]) {
-  return metrics.map(m => ({
-    month: m.month_label,
-    roi: m.monthly_roi,
-    activationRate: m.adoption_rate,
-    mauRate: m.mau_rate || 0,
-    cashOutflow: m.cash_outflow,
-    amortizedCost: m.amortized_cost,
-    valueRealized: m.value_realized,
-    cumulativePaybackPct: m.cumulative_payback_pct || 0,
-    monthlyRoi: m.monthly_roi,
-  }));
+  let cumulativeAmortizedCost = 0;
+  
+  return metrics.map(m => {
+    cumulativeAmortizedCost += m.amortized_cost;
+    
+    // Calculate cumulative ROI: (cumulative_value - cumulative_amortized) / cumulative_amortized * 100
+    const cumulativeROI = cumulativeAmortizedCost > 0 
+      ? ((m.cumulative_value || 0) - cumulativeAmortizedCost) / cumulativeAmortizedCost * 100
+      : 0;
+    
+    return {
+      month: m.month_label,
+      roi: Math.round(cumulativeROI * 10) / 10, // Cumulative ROI for J-curve chart
+      activationRate: m.adoption_rate,
+      mauRate: m.mau_rate || 0,
+      cashOutflow: m.cash_outflow,
+      amortizedCost: m.amortized_cost,
+      valueRealized: m.value_realized,
+      cumulativePaybackPct: m.cumulative_payback_pct || 0,
+      monthlyRoi: m.monthly_roi, // Keep monthly for CFO view
+    };
+  });
 }
