@@ -138,9 +138,16 @@ export default function ActiveAlerts() {
               ))}
               
               {filteredAlerts.length === 0 && (
-                <div className="text-center py-12 text-muted-foreground">
-                  <AlertTriangle className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                  <p>No hay alertas en esta categoría</p>
+                <div className="text-center py-16">
+                  <div className="mx-auto w-16 h-16 rounded-full bg-success/10 flex items-center justify-center mb-4">
+                    <svg className="w-8 h-8 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-semibold text-foreground mb-2">Todo en orden</h3>
+                  <p className="text-muted-foreground">
+                    No hay alertas {activeTab !== 'all' ? 'en esta categoría' : 'pendientes'}
+                  </p>
                 </div>
               )}
             </div>

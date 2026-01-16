@@ -358,6 +358,68 @@ export function generateAlerts(): SystemAlert[] {
   });
 }
 
+// ============= Data Integrations =============
+
+export interface DataIntegration {
+  id: string;
+  name: string;
+  category: string;
+  description: string;
+  status: 'connected' | 'syncing' | 'stale';
+  lastSync?: Date;
+  dataTypes: string[];
+  icon: 'users' | 'workflow' | 'code' | 'briefcase' | 'clipboard';
+}
+
+export const integrations: DataIntegration[] = [
+  {
+    id: 'hris-workday',
+    name: 'Workday',
+    category: 'HRIS',
+    description: 'Sistema de gestión de recursos humanos',
+    status: 'connected',
+    dataTypes: ['Headcount', 'Roles', 'Departamentos'],
+    icon: 'users',
+  },
+  {
+    id: 'automation-n8n',
+    name: 'n8n',
+    category: 'Automation',
+    description: 'Plataforma de automatización de workflows',
+    status: 'connected',
+    dataTypes: ['Workflow Executions', 'Success Rate'],
+    icon: 'workflow',
+  },
+  {
+    id: 'coding-github',
+    name: 'Cursor / GitHub',
+    category: 'Coding',
+    description: 'Métricas de uso de herramientas de desarrollo',
+    status: 'connected',
+    dataTypes: ['Usage Metrics', 'Lines of Code', 'Completions'],
+    icon: 'code',
+  },
+  {
+    id: 'crm-salesforce',
+    name: 'Salesforce',
+    category: 'CRM',
+    description: 'Sistema de gestión de relaciones con clientes',
+    status: 'syncing',
+    dataTypes: ['Revenue Attribution', 'Deal Velocity'],
+    icon: 'briefcase',
+  },
+  {
+    id: 'surveys-typeform',
+    name: 'Typeform',
+    category: 'Surveys',
+    description: 'Encuestas de satisfacción y feedback',
+    status: 'stale',
+    lastSync: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), // 3 days ago
+    dataTypes: ['NPS', 'Satisfaction Score'],
+    icon: 'clipboard',
+  },
+];
+
 // Pre-generate data
 export const employees = generateEmployees();
 export const departmentStats = calculateDepartmentStats(employees);
