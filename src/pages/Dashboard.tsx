@@ -76,8 +76,49 @@ export default function Dashboard() {
           </>}
       </div>
 
-      {/* J-Curve Chart - Always visible */}
-      
+      {/* ROI Acumulativo Chart */}
+      <div className="mb-8">
+        <h3 className="text-lg font-semibold mb-1">ROI Acumulativo</h3>
+        <p className="text-sm text-muted-foreground mb-4">Calculado vs costo amortizado acumulado</p>
+        {isLoading ? (
+          <Skeleton className="h-64 rounded-xl" />
+        ) : (
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="colorROI" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor={chartColors.primary} stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor={chartColors.primary} stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke={chartColors.grid} vertical={false} />
+                <XAxis dataKey="month" stroke={chartColors.axis} tick={{ fill: chartColors.axis, fontSize: 12 }} axisLine={false} tickLine={false} />
+                <YAxis stroke={chartColors.axis} tick={{ fill: chartColors.axis, fontSize: 12 }} axisLine={false} tickLine={false} tickFormatter={(value) => `${value}%`} />
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: chartColors.tooltipBg, 
+                    border: `1px solid ${chartColors.tooltipBorder}`,
+                    borderRadius: '8px',
+                    color: '#fff'
+                  }}
+                  formatter={(value: number) => [`${value.toFixed(1)}%`, 'ROI Acumulativo']}
+                />
+                <ReferenceLine y={0} stroke={chartColors.axis} strokeDasharray="3 3" />
+                <Area 
+                  type="monotone" 
+                  dataKey="cumulativeROI" 
+                  stroke={chartColors.primary} 
+                  strokeWidth={2}
+                  fillOpacity={1} 
+                  fill="url(#colorROI)" 
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+      </div>
+
 
       {/* Methodology Dialog */}
       <Dialog open={methodologyOpen} onOpenChange={setMethodologyOpen}>
