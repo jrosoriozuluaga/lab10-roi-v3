@@ -17,29 +17,31 @@ const chartColors = {
   grid: '#333333',
   axis: '#9ca3af',
   tooltipBg: '#171717',
-  tooltipBorder: '#333333',
+  tooltipBorder: '#333333'
 };
-
 export default function Dashboard() {
   const [methodologyOpen, setMethodologyOpen] = useState(false);
-  const { data: summary, isLoading: loadingSummary } = useSummaryMetrics();
-  const { data: roiData, isLoading: loadingROI, calculations } = useUnifiedROIMetrics();
-
+  const {
+    data: summary,
+    isLoading: loadingSummary
+  } = useSummaryMetrics();
+  const {
+    data: roiData,
+    isLoading: loadingROI,
+    calculations
+  } = useUnifiedROIMetrics();
   const chartData = calculations ? transformCalculationsForCharts(calculations) : [];
   const isLoading = loadingSummary || loadingROI;
-
   const handleExport = () => {
     toast.info('Generando Reporte Ejecutivo Q1 (PDF)...', {
       description: 'El reporte estará listo en unos segundos.',
-      duration: 3000,
+      duration: 3000
     });
   };
 
   // Format currency helper using unified utility
   const formatCurrency = (value: number) => formatCurrencyUtil(value, true);
-
-  return (
-    <DashboardLayout>
+  return <DashboardLayout>
       {/* Header with Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
         <div>
@@ -49,20 +51,11 @@ export default function Dashboard() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <Button
-            variant="outline"
-            onClick={handleExport}
-            className="border-primary text-primary hover:bg-primary hover:text-primary-foreground"
-          >
+          <Button variant="outline" onClick={handleExport} className="border-primary text-primary hover:bg-primary hover:text-primary-foreground">
             <Download className="w-4 h-4 mr-2" />
             Descargar Reporte
           </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setMethodologyOpen(true)}
-            className="text-muted-foreground hover:text-foreground"
-          >
+          <Button variant="ghost" size="icon" onClick={() => setMethodologyOpen(true)} className="text-muted-foreground hover:text-foreground">
             <Info className="w-5 h-5" />
           </Button>
         </div>
@@ -70,106 +63,21 @@ export default function Dashboard() {
 
       {/* General KPIs - Always visible */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        {isLoading ? (
-          <>
+        {isLoading ? <>
             <Skeleton className="h-32 rounded-xl" />
             <Skeleton className="h-32 rounded-xl" />
             <Skeleton className="h-32 rounded-xl" />
             <Skeleton className="h-32 rounded-xl" />
-          </>
-        ) : (
-          <>
-            <KPICard 
-              title="Net AI Value (Acumulado)" 
-              value={formatCurrency(roiData?.cumulativeNetValue ?? 0)} 
-              subtitle={`${roiData?.monthLabel || 'M3'} - ROI acumulado: ${roiData?.cumulativeROI?.toFixed(0) ?? 0}%`}
-              icon={DollarSign} 
-              variant={(roiData?.cumulativeNetValue ?? 0) >= 0 ? 'success' : 'warning'} 
-              trend={(roiData?.netAIValue ?? 0) >= 0 ? 'up' : 'down'} 
-              trendValue={`${(roiData?.netAIValue ?? 0) >= 0 ? '+' : ''}${((roiData?.netAIValue ?? 0) / 1000).toFixed(1)}k este mes`}
-            />
-            <KPICard 
-              title="Activation Rate" 
-              value={`${summary?.activationRate || 57}%`} 
-              subtitle={`${summary?.activeUsers || 292} de ${summary?.totalEmployees || 512} usuarios`} 
-              icon={Users} 
-              variant="success" 
-              trend="up" 
-              trendValue="+8%" 
-            />
-            <KPICard 
-              title="Net AI Value (Mensual)" 
-              value={formatCurrency(roiData?.netAIValue ?? 0)} 
-              subtitle={`ROI mensual: ${roiData?.currentMonthROI?.toFixed(0) ?? 0}%`}
-              icon={Cpu} 
-              variant={(roiData?.netAIValue ?? 0) >= 0 ? 'success' : 'warning'} 
-              trend={(roiData?.netAIValue ?? 0) >= 0 ? 'up' : 'down'} 
-              trendValue={`η=${roiData?.efficiencyFactor?.toFixed(2) ?? '0.55'}`}
-            />
-            <KPICard 
-              title="Break-even Proyectado" 
-              value={roiData?.breakEvenMonth ? `Mes ${roiData.breakEvenMonth}` : 'Pendiente'}
-              subtitle={`Inversión: $250K • Recuperado: ${formatCurrency(250000 + (roiData?.cumulativeNetValue ?? -250000))}`}
-              icon={TrendingUp} 
-              variant={roiData?.breakEvenMonth && roiData.breakEvenMonth <= 12 ? 'success' : 'default'} 
-              trend="up" 
-            />
-          </>
-        )}
+          </> : <>
+            <KPICard title="Net AI Value (Acumulado)" value={formatCurrency(roiData?.cumulativeNetValue ?? 0)} subtitle={`${roiData?.monthLabel || 'M3'} - ROI acumulado: ${roiData?.cumulativeROI?.toFixed(0) ?? 0}%`} icon={DollarSign} variant={(roiData?.cumulativeNetValue ?? 0) >= 0 ? 'success' : 'warning'} trend={(roiData?.netAIValue ?? 0) >= 0 ? 'up' : 'down'} trendValue={`${(roiData?.netAIValue ?? 0) >= 0 ? '+' : ''}${((roiData?.netAIValue ?? 0) / 1000).toFixed(1)}k este mes`} />
+            <KPICard title="Activation Rate" value={`${summary?.activationRate || 57}%`} subtitle={`${summary?.activeUsers || 292} de ${summary?.totalEmployees || 512} usuarios`} icon={Users} variant="success" trend="up" trendValue="+8%" />
+            <KPICard title="Net AI Value (Mensual)" value={formatCurrency(roiData?.netAIValue ?? 0)} subtitle={`ROI mensual: ${roiData?.currentMonthROI?.toFixed(0) ?? 0}%`} icon={Cpu} variant={(roiData?.netAIValue ?? 0) >= 0 ? 'success' : 'warning'} trend={(roiData?.netAIValue ?? 0) >= 0 ? 'up' : 'down'} trendValue={`η=${roiData?.efficiencyFactor?.toFixed(2) ?? '0.55'}`} />
+            <KPICard title="Break-even Proyectado" value={roiData?.breakEvenMonth ? `Mes ${roiData.breakEvenMonth}` : 'Pendiente'} subtitle={`Inversión: $250K • Recuperado: ${formatCurrency(250000 + (roiData?.cumulativeNetValue ?? -250000))}`} icon={TrendingUp} variant={roiData?.breakEvenMonth && roiData.breakEvenMonth <= 12 ? 'success' : 'default'} trend="up" />
+          </>}
       </div>
 
       {/* J-Curve Chart - Always visible */}
-      <div className="p-6 rounded-xl bg-card border border-border">
-        <h3 className="text-lg font-semibold mb-4">Tendencia de ROI Acumulado (Curva J) — Metodología Unificada</h3>
-        <div className="h-[350px] w-full">
-          {loadingROI ? (
-            <Skeleton className="h-full w-full" />
-          ) : (
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={chartData}>
-                <defs>
-                  <linearGradient id="roiGradientGeneral" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor={chartColors.primary} stopOpacity={0.4}/>
-                    <stop offset="95%" stopColor={chartColors.primary} stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke={chartColors.grid} />
-                <XAxis 
-                  dataKey="month" 
-                  stroke={chartColors.axis} 
-                  tick={{ fill: chartColors.axis, fontSize: 12 }}
-                  interval={0}
-                />
-                <YAxis 
-                  stroke={chartColors.axis} 
-                  tick={{ fill: chartColors.axis }}
-                  tickFormatter={(value) => `${value}%`}
-                  domain={['auto', 'auto']}
-                />
-                <ReferenceLine y={0} stroke="#666" strokeDasharray="3 3" label={{ value: 'Break-even', fill: '#666', fontSize: 11, position: 'right' }} />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: chartColors.tooltipBg, 
-                    borderColor: chartColors.tooltipBorder, 
-                    color: '#fff',
-                    borderRadius: '8px'
-                  }}
-                  labelStyle={{ color: chartColors.axis }}
-                  formatter={(value: number) => [`${Math.round(value)}%`, 'ROI']}
-                />
-                <Area 
-                  type="monotone" 
-                  dataKey="roi" 
-                  stroke={chartColors.primary} 
-                  strokeWidth={2}
-                  fill="url(#roiGradientGeneral)"
-                  dot={{ fill: chartColors.primary, strokeWidth: 2, r: 3 }}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          )}
-        </div>
-      </div>
+      
 
       {/* Methodology Dialog */}
       <Dialog open={methodologyOpen} onOpenChange={setMethodologyOpen}>
@@ -228,6 +136,5 @@ export default function Dashboard() {
           </div>
         </DialogContent>
       </Dialog>
-    </DashboardLayout>
-  );
+    </DashboardLayout>;
 }
