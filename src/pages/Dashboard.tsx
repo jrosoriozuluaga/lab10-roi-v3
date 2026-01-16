@@ -5,7 +5,7 @@ import { SmartAlert } from '@/components/SmartAlert';
 import { useRole } from '@/contexts/RoleContext';
 import { DollarSign, Users, TrendingUp, Clock, Target, Cpu, Brain, Zap, Download, Info } from 'lucide-react';
 import { departmentStats, monthlyMetrics, m3Benchmarks } from '@/lib/mockData';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, ReferenceLine } from 'recharts';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { toast } from 'sonner';
@@ -46,13 +46,30 @@ export default function Dashboard() {
       </div>
       <SmartAlert type="info" message="El Net AI Value es negativo pero la tendencia es positiva. Esto es esperado en Mes 3 de implementación." className="mb-6" />
       <div className="p-6 rounded-xl bg-card border border-border">
-        <h3 className="text-lg font-semibold mb-4">Tendencia de ROI</h3>
+        <h3 className="text-lg font-semibold mb-4">Tendencia de ROI (Curva J)</h3>
         <div className="h-[350px] w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={monthlyMetrics}>
+            <AreaChart data={monthlyMetrics}>
+              <defs>
+                <linearGradient id="roiGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor={chartColors.primary} stopOpacity={0.4}/>
+                  <stop offset="95%" stopColor={chartColors.primary} stopOpacity={0}/>
+                </linearGradient>
+              </defs>
               <CartesianGrid strokeDasharray="3 3" stroke={chartColors.grid} />
-              <XAxis dataKey="month" stroke={chartColors.axis} tick={{ fill: chartColors.axis }} />
-              <YAxis stroke={chartColors.axis} tick={{ fill: chartColors.axis }} />
+              <XAxis 
+                dataKey="month" 
+                stroke={chartColors.axis} 
+                tick={{ fill: chartColors.axis, fontSize: 12 }}
+                interval={1}
+              />
+              <YAxis 
+                stroke={chartColors.axis} 
+                tick={{ fill: chartColors.axis }}
+                tickFormatter={(value) => `${value}%`}
+                domain={['auto', 'auto']}
+              />
+              <ReferenceLine y={0} stroke="#666" strokeDasharray="3 3" label={{ value: 'Break-even', fill: '#666', fontSize: 11, position: 'right' }} />
               <Tooltip 
                 contentStyle={{ 
                   backgroundColor: chartColors.tooltipBg, 
@@ -61,9 +78,17 @@ export default function Dashboard() {
                   borderRadius: '8px'
                 }}
                 labelStyle={{ color: chartColors.axis }}
+                formatter={(value: number) => [`${Math.round(value)}%`, 'ROI']}
               />
-              <Line type="monotone" dataKey="roi" stroke={chartColors.primary} strokeWidth={2} dot={{ fill: chartColors.primary }} />
-            </LineChart>
+              <Area 
+                type="monotone" 
+                dataKey="roi" 
+                stroke={chartColors.primary} 
+                strokeWidth={2}
+                fill="url(#roiGradient)"
+                dot={{ fill: chartColors.primary, strokeWidth: 2, r: 3 }}
+              />
+            </AreaChart>
           </ResponsiveContainer>
         </div>
       </div>
@@ -79,13 +104,23 @@ export default function Dashboard() {
       </div>
       <SmartAlert type="warning" message="⚠️ Alto costo de oportunidad detectado en equipo Operations ($18,500)" className="mb-6" />
       <div className="p-6 rounded-xl bg-card border border-border">
-        <h3 className="text-lg font-semibold mb-4">Costos vs Beneficios por Mes</h3>
+        <h3 className="text-lg font-semibold mb-4">Net AI Value por Mes (Curva J)</h3>
         <div className="h-[350px] w-full">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={monthlyMetrics}>
               <CartesianGrid strokeDasharray="3 3" stroke={chartColors.grid} />
-              <XAxis dataKey="month" stroke={chartColors.axis} tick={{ fill: chartColors.axis }} />
-              <YAxis stroke={chartColors.axis} tick={{ fill: chartColors.axis }} />
+              <XAxis 
+                dataKey="month" 
+                stroke={chartColors.axis} 
+                tick={{ fill: chartColors.axis, fontSize: 12 }}
+                interval={1}
+              />
+              <YAxis 
+                stroke={chartColors.axis} 
+                tick={{ fill: chartColors.axis }}
+                tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
+              />
+              <ReferenceLine y={0} stroke="#666" strokeDasharray="3 3" />
               <Tooltip 
                 contentStyle={{ 
                   backgroundColor: chartColors.tooltipBg, 
@@ -94,6 +129,7 @@ export default function Dashboard() {
                   borderRadius: '8px'
                 }}
                 labelStyle={{ color: chartColors.axis }}
+                formatter={(value: number) => [`$${value.toLocaleString()}`, 'Net AI Value']}
               />
               <Bar dataKey="netAIValue" fill={chartColors.primary} radius={[4, 4, 0, 0]} />
             </BarChart>
