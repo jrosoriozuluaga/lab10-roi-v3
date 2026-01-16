@@ -12,17 +12,30 @@ export const financialSettings = {
   monthlyAmortized: 20833.33,
 };
 
-// Cash Flow Data for CFO dual-view ($250k upfront investment)
+// NOTE: These mock exports are deprecated. All ROI data should come from roi_calculations table.
+// Keeping for backward compatibility but values now align with roi_calculations.cumulative_roi.
 export const cashFlowData = [
+  { 
+    month: 'Mes 0', 
+    monthIndex: 0,
+    cashOutflow: 250000, 
+    amortizedCost: 0, 
+    valueRealized: 0,
+    cumulativeRoi: -100.0,
+    cumulativeValue: 0,
+    cumulativePaybackPct: 0,
+    adoptionRate: 0,
+    activeUsers: 0,
+  },
   { 
     month: 'Mes 1', 
     monthIndex: 1,
-    cashOutflow: 250000, 
+    cashOutflow: 0, 
     amortizedCost: 20833.33, 
-    valueRealized: 4500,
-    monthlyRoi: -78.4,
-    cumulativeValue: 4500,
-    cumulativePaybackPct: 1.8,
+    valueRealized: 1730,
+    cumulativeRoi: -91.7,
+    cumulativeValue: 1730,
+    cumulativePaybackPct: 0.7,
     adoptionRate: 15,
     activeUsers: 77,
   },
@@ -31,10 +44,10 @@ export const cashFlowData = [
     monthIndex: 2,
     cashOutflow: 0, 
     amortizedCost: 20833.33, 
-    valueRealized: 15600,
-    monthlyRoi: -25.1,
-    cumulativeValue: 20100,
-    cumulativePaybackPct: 8.0,
+    valueRealized: 6050,
+    cumulativeRoi: -81.3,
+    cumulativeValue: 7780,
+    cumulativePaybackPct: 3.1,
     adoptionRate: 35,
     activeUsers: 179,
   },
@@ -43,19 +56,19 @@ export const cashFlowData = [
     monthIndex: 3,
     cashOutflow: 0, 
     amortizedCost: 20833.33, 
-    valueRealized: 21460,
-    monthlyRoi: 3.0,
-    cumulativeValue: 41560,
-    cumulativePaybackPct: 16.6,
+    valueRealized: 18250,
+    cumulativeRoi: -68.7,
+    cumulativeValue: 26030,
+    cumulativePaybackPct: 10.4,
     adoptionRate: 57,
     activeUsers: 292,
   },
 ];
 
-// Simple ROI data for CEO/General views (ROI only)
+// Simple ROI data for CEO/General views (cumulative ROI - J-curve)
 export const roiTrendData = cashFlowData.map(d => ({
   month: d.month,
-  roi: d.monthlyRoi,
+  roi: d.cumulativeRoi,
 }));
 
 // ============= API & Infrastructure Consumption =============
