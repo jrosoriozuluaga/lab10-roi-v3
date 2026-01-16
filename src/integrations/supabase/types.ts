@@ -14,9 +14,126 @@ export type Database = {
   }
   public: {
     Tables: {
-      projects: {
+      employees: {
         Row: {
           created_at: string | null
+          department: string
+          email: string
+          id: string
+          last_active: string | null
+          name: string
+          role: string
+          usage_level: string
+          weekly_ai_hours: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          department: string
+          email: string
+          id?: string
+          last_active?: string | null
+          name: string
+          role: string
+          usage_level?: string
+          weekly_ai_hours?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          department?: string
+          email?: string
+          id?: string
+          last_active?: string | null
+          name?: string
+          role?: string
+          usage_level?: string
+          weekly_ai_hours?: number | null
+        }
+        Relationships: []
+      }
+      financial_settings: {
+        Row: {
+          amortization_months: number
+          created_at: string | null
+          fiscal_year_start: string
+          id: string
+          monthly_amortized: number | null
+          total_investment: number
+        }
+        Insert: {
+          amortization_months?: number
+          created_at?: string | null
+          fiscal_year_start?: string
+          id?: string
+          monthly_amortized?: number | null
+          total_investment?: number
+        }
+        Update: {
+          amortization_months?: number
+          created_at?: string | null
+          fiscal_year_start?: string
+          id?: string
+          monthly_amortized?: number | null
+          total_investment?: number
+        }
+        Relationships: []
+      }
+      monthly_metrics: {
+        Row: {
+          active_users: number
+          adoption_rate: number
+          amortized_cost: number
+          cash_outflow: number
+          created_at: string | null
+          cumulative_payback_pct: number | null
+          cumulative_value: number | null
+          id: string
+          mau_rate: number | null
+          month_index: number
+          month_label: string
+          monthly_roi: number
+          power_users_count: number | null
+          value_realized: number
+        }
+        Insert: {
+          active_users?: number
+          adoption_rate?: number
+          amortized_cost?: number
+          cash_outflow?: number
+          created_at?: string | null
+          cumulative_payback_pct?: number | null
+          cumulative_value?: number | null
+          id?: string
+          mau_rate?: number | null
+          month_index: number
+          month_label: string
+          monthly_roi?: number
+          power_users_count?: number | null
+          value_realized?: number
+        }
+        Update: {
+          active_users?: number
+          adoption_rate?: number
+          amortized_cost?: number
+          cash_outflow?: number
+          created_at?: string | null
+          cumulative_payback_pct?: number | null
+          cumulative_value?: number | null
+          id?: string
+          mau_rate?: number | null
+          month_index?: number
+          month_label?: string
+          monthly_roi?: number
+          power_users_count?: number | null
+          value_realized?: number
+        }
+        Relationships: []
+      }
+      projects: {
+        Row: {
+          budget_allocated: number | null
+          budget_spent: number | null
+          created_at: string | null
+          department: string | null
           id: string
           impact_level: string
           name: string
@@ -27,7 +144,10 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          budget_allocated?: number | null
+          budget_spent?: number | null
           created_at?: string | null
+          department?: string | null
           id?: string
           impact_level?: string
           name: string
@@ -38,7 +158,10 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          budget_allocated?: number | null
+          budget_spent?: number | null
           created_at?: string | null
+          department?: string | null
           id?: string
           impact_level?: string
           name?: string

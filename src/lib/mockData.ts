@@ -3,6 +3,61 @@ import { faker } from '@faker-js/faker';
 // Seed for consistent data
 faker.seed(42);
 
+// ============= Financial Settings (CFO View) =============
+
+export const financialSettings = {
+  totalInvestment: 250000,
+  fiscalYearStart: '2026-01-01',
+  amortizationMonths: 12,
+  monthlyAmortized: 20833.33,
+};
+
+// Cash Flow Data for CFO dual-view ($250k upfront investment)
+export const cashFlowData = [
+  { 
+    month: 'Mes 1', 
+    monthIndex: 1,
+    cashOutflow: 250000, 
+    amortizedCost: 20833.33, 
+    valueRealized: 4500,
+    monthlyRoi: -78.4,
+    cumulativeValue: 4500,
+    cumulativePaybackPct: 1.8,
+    adoptionRate: 15,
+    activeUsers: 77,
+  },
+  { 
+    month: 'Mes 2', 
+    monthIndex: 2,
+    cashOutflow: 0, 
+    amortizedCost: 20833.33, 
+    valueRealized: 15600,
+    monthlyRoi: -25.1,
+    cumulativeValue: 20100,
+    cumulativePaybackPct: 8.0,
+    adoptionRate: 35,
+    activeUsers: 179,
+  },
+  { 
+    month: 'Mes 3', 
+    monthIndex: 3,
+    cashOutflow: 0, 
+    amortizedCost: 20833.33, 
+    valueRealized: 21460,
+    monthlyRoi: 3.0,
+    cumulativeValue: 41560,
+    cumulativePaybackPct: 16.6,
+    adoptionRate: 57,
+    activeUsers: 292,
+  },
+];
+
+// Simple ROI data for CEO/General views (ROI only)
+export const roiTrendData = cashFlowData.map(d => ({
+  month: d.month,
+  roi: d.monthlyRoi,
+}));
+
 // ============= API & Infrastructure Consumption =============
 
 export interface APIConsumption {
