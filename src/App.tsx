@@ -9,6 +9,9 @@ import { RoleGate } from "@/components/RoleGate";
 import Dashboard from "./pages/Dashboard";
 import ROICalculator from "./pages/ROICalculator";
 import AdoptionMetrics from "./pages/AdoptionMetrics";
+import ProjectsPortfolio from "./pages/ProjectsPortfolio";
+import ActiveAlerts from "./pages/ActiveAlerts";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -25,6 +28,9 @@ function AppContent() {
       <Route path="/" element={<Dashboard />} />
       <Route path="/calculator" element={<ROICalculator />} />
       <Route path="/adoption" element={<AdoptionMetrics />} />
+      <Route path="/projects" element={<ProjectsPortfolio />} />
+      <Route path="/alerts" element={<ActiveAlerts />} />
+      <Route path="/settings" element={<Settings />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

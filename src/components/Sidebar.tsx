@@ -1,7 +1,8 @@
 import { NavLink, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Calculator, TrendingUp, Sun, Moon, ChevronDown } from 'lucide-react';
+import { LayoutDashboard, Calculator, Briefcase, AlertTriangle, Settings, Sun, Moon, ChevronDown } from 'lucide-react';
 import { useRole, Role } from '@/contexts/RoleContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { criticalAlertCount } from '@/lib/mockData';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,7 +15,9 @@ import lab10LogoIcon from '@/assets/lab10-logo-icon.png';
 const navItems = [
   { path: '/', label: 'Dashboard', icon: LayoutDashboard },
   { path: '/calculator', label: 'Calculadora ROI', icon: Calculator },
-  { path: '/adoption', label: 'Métricas de Adopción', icon: TrendingUp },
+  { path: '/projects', label: 'Portafolio Proyectos', icon: Briefcase },
+  { path: '/alerts', label: 'Alertas Activas', icon: AlertTriangle, showBadge: true },
+  { path: '/settings', label: 'Configuración', icon: Settings },
 ];
 
 const roles: Role[] = ['CEO', 'CFO', 'CTO', 'AI Lead'];
@@ -42,18 +45,24 @@ export function Sidebar() {
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = location.pathname === item.path;
+          const showNotificationDot = 'showBadge' in item && item.showBadge && criticalAlertCount > 0;
           
           return (
             <NavLink
               key={item.path}
               to={item.path}
-              className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
+              className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 relative ${
                 isActive
                   ? 'bg-primary text-primary-foreground'
                   : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
               }`}
             >
-              <Icon className="w-5 h-5" />
+              <div className="relative">
+                <Icon className="w-5 h-5" />
+                {showNotificationDot && (
+                  <span className="absolute -top-1 -right-1 w-2 h-2 bg-destructive rounded-full animate-pulse" />
+                )}
+              </div>
               <span className="font-medium">{item.label}</span>
             </NavLink>
           );
