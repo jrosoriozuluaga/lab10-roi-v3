@@ -1,6 +1,62 @@
 import { supabase } from "@/integrations/supabase/client";
 import { calculateDepartmentStats } from "@/hooks/useMetrics";
 
+export interface ROICalculation {
+  month_label: string;
+  month_index: number;
+  active_users: number;
+  gross_fte_savings: number;
+  net_fte_savings: number;
+  license_savings: number;
+  outsourcing_reduction: number;
+  total_hard_savings: number;
+  gross_revenue: number;
+  net_revenue: number;
+  downtime_reduction: number;
+  fraud_prevention: number;
+  rework_reduction: number;
+  compliance_savings: number;
+  total_cost_avoidance: number;
+  total_benefits: number;
+  monthly_costs: number;
+  hidden_costs: number;
+  total_costs: number;
+  net_ai_value: number;
+  monthly_roi: number;
+  cumulative_roi: number;
+  cumulative_net_value: number;
+  cumulative_costs: number;
+  efficiency_factor_used: number;
+  attribution_factor_used: number;
+}
+
+export interface ROISettings {
+  efficiency_factor: number;
+  attribution_factor: number;
+  avg_hourly_rate: number;
+  avg_hourly_cost: number;
+  hours_saved_per_user_week: number;
+  learning_curve_penalty: number;
+  learning_curve_hours: number;
+  license_savings: number;
+  outsourcing_reduction: number;
+  monthly_revenue_uplift: number;
+  downtime_reduction: number;
+  fraud_prevention: number;
+  rework_reduction: number;
+  compliance_savings: number;
+  monthly_licenses: number;
+  implementation_cost: number;
+  training_budget: number;
+}
+
+export interface FinancialSettings {
+  total_investment: number;
+  amortization_months: number;
+  monthly_amortized: number | null;
+  fiscal_year_start: string;
+}
+
 export interface DashboardContext {
   summary: {
     netAIValue: string;
@@ -32,6 +88,10 @@ export interface DashboardContext {
     month: string;
     value: number;
   }>;
+  // Complete data tables for AI
+  roiCalculations: ROICalculation[];
+  roiSettings: ROISettings | null;
+  financialSettings: FinancialSettings | null;
 }
 
 export interface ChatMessage {
@@ -134,16 +194,18 @@ export async function gatherContextData(): Promise<DashboardContext> {
     ];
   }
 
-  // Fetch ROI trend from roi_calculations (single source of truth)
+  // Fetch COMPLETE ROI calculations from roi_calculations (single source of truth)
   let roiTrend: DashboardContext['roiTrend'] = [];
+  let roiCalculations: ROICalculation[] = [];
   
   try {
     const { data: roiData, error } = await supabase
       .from('roi_calculations')
-      .select('month_label, cumulative_roi')
+      .select('*')
       .order('month_index', { ascending: true });
 
     if (!error && roiData) {
+      roiCalculations = roiData as ROICalculation[];
       roiTrend = roiData.map(m => ({
         month: m.month_label,
         value: Number(m.cumulative_roi),
@@ -161,6 +223,38 @@ export async function gatherContextData(): Promise<DashboardContext> {
       { month: 'Mes 2', value: -81.3 },
       { month: 'Mes 3', value: -68.7 },
     ];
+  }
+
+  // Fetch ROI settings (methodology parameters)
+  let roiSettings: ROISettings | null = null;
+  
+  try {
+    const { data: settingsData, error } = await supabase
+      .from('roi_settings')
+      .select('*')
+      .maybeSingle();
+
+    if (!error && settingsData) {
+      roiSettings = settingsData as ROISettings;
+    }
+  } catch (e) {
+    console.log('Using fallback ROI settings');
+  }
+
+  // Fetch financial settings (investment data)
+  let financialSettings: FinancialSettings | null = null;
+  
+  try {
+    const { data: finData, error } = await supabase
+      .from('financial_settings')
+      .select('*')
+      .maybeSingle();
+
+    if (!error && finData) {
+      financialSettings = finData as FinancialSettings;
+    }
+  } catch (e) {
+    console.log('Using fallback financial settings');
   }
 
   // Calculate delivery rate from projects
@@ -200,6 +294,9 @@ export async function gatherContextData(): Promise<DashboardContext> {
       opportunity: 3,
     },
     roiTrend,
+    roiCalculations,
+    roiSettings,
+    financialSettings,
   };
 }
 
