@@ -16,7 +16,7 @@ const navItems = [
   { path: '/', label: 'Dashboard', icon: LayoutDashboard },
   { path: '/calculator', label: 'Calculadora ROI', icon: Calculator },
   { path: '/projects', label: 'Portafolio Proyectos', icon: Briefcase },
-  { path: '/alerts', label: 'Alertas Activas', icon: AlertTriangle, showBadge: true },
+  { path: '/alerts', label: 'Alertas', icon: AlertTriangle, showBadge: true },
   { path: '/settings', label: 'Configuración', icon: Settings },
 ];
 
