@@ -1,21 +1,21 @@
-import { useState, useRef, useEffect } from 'react';
-import { Bot, X, Send, Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { ChatMessage } from './ChatMessage';
-import { 
-  ChatMessage as ChatMessageType, 
-  gatherContextData, 
+import { useState, useRef, useEffect } from "react";
+import { Bot, X, Send, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { ChatMessage } from "./ChatMessage";
+import {
+  ChatMessage as ChatMessageType,
+  gatherContextData,
   sendMessage,
-  DashboardContext 
-} from '@/services/RealAiService';
-import { cn } from '@/lib/utils';
+  DashboardContext,
+} from "@/services/RealAiService";
+import { cn } from "@/lib/utils";
 
 export function ChatWidget() {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessageType[]>([]);
-  const [input, setInput] = useState('');
+  const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [contextData, setContextData] = useState<DashboardContext | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -47,42 +47,42 @@ export function ChatWidget() {
 
     const userMessage: ChatMessageType = {
       id: Date.now().toString(),
-      role: 'user',
+      role: "user",
       content: input.trim(),
       timestamp: new Date(),
     };
 
-    setMessages(prev => [...prev, userMessage]);
-    setInput('');
+    setMessages((prev) => [...prev, userMessage]);
+    setInput("");
     setIsLoading(true);
 
     try {
       const { response, chartData } = await sendMessage(input.trim(), contextData);
-      
+
       const assistantMessage: ChatMessageType = {
         id: (Date.now() + 1).toString(),
-        role: 'assistant',
+        role: "assistant",
         content: response,
         timestamp: new Date(),
         chartData,
       };
 
-      setMessages(prev => [...prev, assistantMessage]);
+      setMessages((prev) => [...prev, assistantMessage]);
     } catch (error) {
       const errorMessage: ChatMessageType = {
         id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: `Error: ${error instanceof Error ? error.message : 'Error desconocido'}. Por favor intenta de nuevo.`,
+        role: "assistant",
+        content: `Error: ${error instanceof Error ? error.message : "Error desconocido"}. Por favor intenta de nuevo.`,
         timestamp: new Date(),
       };
-      setMessages(prev => [...prev, errorMessage]);
+      setMessages((prev) => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSend();
     }
@@ -98,20 +98,22 @@ export function ChatWidget() {
           "bg-primary hover:bg-primary/90 text-primary-foreground",
           "transition-all duration-300",
           isOpen ? "scale-0 opacity-0" : "scale-100 opacity-100",
-          !isOpen && "animate-pulse"
+          !isOpen && "animate-pulse",
         )}
       >
         <Bot className="w-6 h-6" />
       </Button>
 
       {/* Chat Window */}
-      <div className={cn(
-        "fixed bottom-6 right-6 z-50 w-[400px] h-[600px] max-h-[80vh]",
-        "bg-card border border-border rounded-xl shadow-2xl",
-        "flex flex-col overflow-hidden",
-        "transition-all duration-300 origin-bottom-right",
-        isOpen ? "scale-100 opacity-100" : "scale-0 opacity-0 pointer-events-none"
-      )}>
+      <div
+        className={cn(
+          "fixed bottom-6 right-6 z-50 w-[400px] h-[600px] max-h-[80vh]",
+          "bg-card border border-border rounded-xl shadow-2xl",
+          "flex flex-col overflow-hidden",
+          "transition-all duration-300 origin-bottom-right",
+          isOpen ? "scale-100 opacity-100" : "scale-0 opacity-0 pointer-events-none",
+        )}
+      >
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-border bg-muted/50">
           <div className="flex items-center gap-3">
@@ -139,26 +141,20 @@ export function ChatWidget() {
             {messages.length === 0 && (
               <div className="text-center py-8">
                 <Bot className="w-12 h-12 mx-auto text-muted-foreground/50 mb-4" />
-                <p className="text-sm text-muted-foreground mb-2">
-                  ¡Hola! Soy tu asistente de AI.
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Pregúntame sobre métricas, proyectos o tendencias.
-                </p>
+                <p className="text-sm text-muted-foreground mb-2">¡Hola! Soy tu asistente de AI.</p>
+                <p className="text-xs text-muted-foreground">Pregúntame sobre métricas, proyectos o tendencias.</p>
                 <div className="mt-4 space-y-2">
-                  {[
-                    '¿Cuál es el ROI actual?',
-                    '¿Qué proyectos están en riesgo?',
-                    '¿Cómo está Legal?',
-                  ].map((suggestion) => (
-                    <button
-                      key={suggestion}
-                      onClick={() => setInput(suggestion)}
-                      className="block w-full text-left text-xs px-3 py-2 rounded-lg bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                      {suggestion}
-                    </button>
-                  ))}
+                  {["¿Debo seguir inviertiendo?", "¿Qué proyectos están en riesgo?", "¿Cómo está Legal?"].map(
+                    (suggestion) => (
+                      <button
+                        key={suggestion}
+                        onClick={() => setInput(suggestion)}
+                        className="block w-full text-left text-xs px-3 py-2 rounded-lg bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        {suggestion}
+                      </button>
+                    ),
+                  )}
                 </div>
               </div>
             )}
@@ -172,9 +168,7 @@ export function ChatWidget() {
                 <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
                   <Loader2 className="w-4 h-4 text-primary animate-spin" />
                 </div>
-                <div className="text-sm text-muted-foreground">
-                  Analizando datos con AI...
-                </div>
+                <div className="text-sm text-muted-foreground">Analizando datos con AI...</div>
               </div>
             )}
           </div>
