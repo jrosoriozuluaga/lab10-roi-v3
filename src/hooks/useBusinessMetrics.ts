@@ -66,7 +66,7 @@ export function transformForChart(history: ROICalculation[]) {
     month: calc.month_label,
     roi: Math.round(Number(calc.cumulative_roi) * 10) / 10,
     monthlyRoi: Math.round(Number(calc.monthly_roi) * 10) / 10,
-    netValue: Number(calc.net_ai_value),
+    netValue: Number(calc.monthly_net_benefit),
     cumulativeNetValue: Number(calc.cumulative_net_value),
     totalBenefits: Number(calc.total_benefits),
     totalCosts: Number(calc.total_costs),
