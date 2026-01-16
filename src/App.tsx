@@ -7,6 +7,7 @@ import { RoleProvider, useRole } from "@/contexts/RoleContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { RoleGate } from "@/components/RoleGate";
 import Dashboard from "./pages/Dashboard";
+import StakeholderView from "./pages/StakeholderView";
 import ROICalculator from "./pages/ROICalculator";
 import AdoptionMetrics from "./pages/AdoptionMetrics";
 import ProjectsPortfolio from "./pages/ProjectsPortfolio";
@@ -26,6 +27,7 @@ function AppContent() {
   return (
     <Routes>
       <Route path="/" element={<Dashboard />} />
+      <Route path="/stakeholder" element={<StakeholderView />} />
       <Route path="/calculator" element={<ROICalculator />} />
       <Route path="/adoption" element={<AdoptionMetrics />} />
       <Route path="/projects" element={<ProjectsPortfolio />} />

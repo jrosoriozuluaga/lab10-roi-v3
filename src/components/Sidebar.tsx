@@ -1,30 +1,21 @@
 import { NavLink, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Calculator, Briefcase, AlertTriangle, Settings, Sun, Moon, ChevronDown } from 'lucide-react';
-import { useRole, Role } from '@/contexts/RoleContext';
+import { LayoutDashboard, Calculator, Briefcase, AlertTriangle, Settings, Sun, Moon, UsersRound } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { criticalAlertCount } from '@/lib/mockData';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import lab10LogoIcon from '@/assets/lab10-logo-icon.png';
 
 const navItems = [
   { path: '/', label: 'Dashboard', icon: LayoutDashboard },
+  { path: '/stakeholder', label: 'Vista Stakeholder', icon: UsersRound },
   { path: '/calculator', label: 'Calculadora ROI', icon: Calculator },
   { path: '/projects', label: 'Portafolio Proyectos', icon: Briefcase },
   { path: '/alerts', label: 'Alertas', icon: AlertTriangle, showBadge: true },
   { path: '/settings', label: 'Configuración', icon: Settings },
 ];
 
-const roles: Role[] = ['CEO', 'CFO', 'CTO', 'AI Lead'];
-
 export function Sidebar() {
   const location = useLocation();
-  const { role, setRole } = useRole();
   const { theme, toggleTheme } = useTheme();
 
   return (
@@ -70,34 +61,7 @@ export function Sidebar() {
       </nav>
 
       {/* Bottom Section */}
-      <div className="p-4 border-t border-sidebar-border space-y-4">
-        {/* Role Switcher */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="outline"
-              className="w-full justify-between bg-sidebar-accent border-sidebar-border"
-            >
-              <span className="text-sm">
-                <span className="text-muted-foreground">Viendo como:</span>{' '}
-                <span className="font-semibold text-foreground">{role}</span>
-              </span>
-              <ChevronDown className="w-4 h-4 text-muted-foreground" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-56">
-            {roles.map((r) => (
-              <DropdownMenuItem
-                key={r}
-                onClick={() => setRole(r)}
-                className={role === r ? 'bg-primary/10 text-primary' : ''}
-              >
-                {r}
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
-
+      <div className="p-4 border-t border-sidebar-border">
         {/* Theme Toggle */}
         <Button
           variant="ghost"
