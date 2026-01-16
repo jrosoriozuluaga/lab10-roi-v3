@@ -107,7 +107,7 @@ export default function Dashboard() {
                 <ReferenceLine y={0} stroke={chartColors.axis} strokeDasharray="3 3" />
                 <Area 
                   type="monotone" 
-                  dataKey="cumulativeROI" 
+                  dataKey="roi"
                   stroke={chartColors.primary} 
                   strokeWidth={2}
                   fillOpacity={1} 
