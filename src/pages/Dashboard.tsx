@@ -80,13 +80,13 @@ export default function Dashboard() {
         ) : (
           <>
             <KPICard 
-              title="Net AI Value" 
-              value={formatCurrency(roiData?.cumulativeNetValue || 77607)} 
-              subtitle={`${roiData?.monthLabel || 'M3'} - ROI acumulado: ${roiData?.cumulativeROI?.toFixed(0) || 103}%`}
+              title="Net AI Value (Acumulado)" 
+              value={formatCurrency(roiData?.cumulativeNetValue ?? 0)} 
+              subtitle={`${roiData?.monthLabel || 'M3'} - ROI acumulado: ${roiData?.cumulativeROI?.toFixed(0) ?? 0}%`}
               icon={DollarSign} 
-              variant={(roiData?.cumulativeNetValue || 0) >= 0 ? 'success' : 'warning'} 
-              trend="up" 
-              trendValue={`+${((roiData?.netAIValue || 0) / 1000).toFixed(0)}k este mes`}
+              variant={(roiData?.cumulativeNetValue ?? 0) >= 0 ? 'success' : 'warning'} 
+              trend={(roiData?.netAIValue ?? 0) >= 0 ? 'up' : 'down'} 
+              trendValue={`${(roiData?.netAIValue ?? 0) >= 0 ? '+' : ''}${((roiData?.netAIValue ?? 0) / 1000).toFixed(1)}k este mes`}
             />
             <KPICard 
               title="Activation Rate" 
@@ -98,20 +98,20 @@ export default function Dashboard() {
               trendValue="+8%" 
             />
             <KPICard 
-              title="Delivery Rate" 
-              value={`${summary?.deliveryRate || 52}%`} 
-              subtitle="Proyectos en tiempo" 
+              title="Net AI Value (Mensual)" 
+              value={formatCurrency(roiData?.netAIValue ?? 0)} 
+              subtitle={`ROI mensual: ${roiData?.currentMonthROI?.toFixed(0) ?? 0}%`}
               icon={Cpu} 
-              variant="success" 
-              trend="up" 
-              trendValue="+12%" 
+              variant={(roiData?.netAIValue ?? 0) >= 0 ? 'success' : 'warning'} 
+              trend={(roiData?.netAIValue ?? 0) >= 0 ? 'up' : 'down'} 
+              trendValue={`η=${roiData?.efficiencyFactor?.toFixed(2) ?? '0.55'}`}
             />
             <KPICard 
-              title="ROI Proyectado M12" 
-              value={`+${roiData?.projectedM12ROI || 263}%`} 
-              subtitle={roiData?.breakEvenMonth ? `Break-even: M${roiData.breakEvenMonth}` : 'Calculando...'}
+              title="Break-even Proyectado" 
+              value={roiData?.breakEvenMonth ? `Mes ${roiData.breakEvenMonth}` : 'Pendiente'}
+              subtitle={`Inversión: $250K • Recuperado: ${formatCurrency(250000 + (roiData?.cumulativeNetValue ?? -250000))}`}
               icon={TrendingUp} 
-              variant="success" 
+              variant={roiData?.breakEvenMonth && roiData.breakEvenMonth <= 12 ? 'success' : 'default'} 
               trend="up" 
             />
           </>
