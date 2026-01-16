@@ -2,3 +2,6 @@ project_id = "ixsgknbdnkgondkynymm"
 
 [functions.chat-copilot]
 verify_jwt = false
+
+[functions.seed-database]
+verify_jwt = false
