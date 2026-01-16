@@ -34,10 +34,10 @@ function InputWithTip({ label, tip, value, onChange, prefix = '$', suffix, min =
         {tip && (
           <Tooltip>
             <TooltipTrigger>
-              <Info className="w-4 h-4 text-muted-foreground hover:text-primary transition-colors" />
+              <Info className="w-4 h-4 text-muted-foreground/60 hover:text-[#FDE047] transition-colors cursor-help" />
             </TooltipTrigger>
-            <TooltipContent className="max-w-xs">
-              <p className="text-sm">{tip}</p>
+            <TooltipContent className="max-w-xs bg-neutral-900 text-white border-neutral-700">
+              <p className="text-sm leading-relaxed whitespace-pre-line">{tip}</p>
             </TooltipContent>
           </Tooltip>
         )}
@@ -93,10 +93,10 @@ function SliderWithTip({ label, tip, value, onChange, min, max, step = 0.05, inp
           {tip && (
             <Tooltip>
               <TooltipTrigger>
-                <Info className="w-4 h-4 text-muted-foreground hover:text-primary transition-colors" />
+                <Info className="w-4 h-4 text-muted-foreground/60 hover:text-[#FDE047] transition-colors cursor-help" />
               </TooltipTrigger>
-              <TooltipContent className="max-w-xs">
-                <p className="text-sm">{tip}</p>
+              <TooltipContent className="max-w-xs bg-neutral-900 text-white border-neutral-700">
+                <p className="text-sm leading-relaxed whitespace-pre-line">{tip}</p>
               </TooltipContent>
             </Tooltip>
           )}
@@ -428,7 +428,7 @@ export default function ROICalculator() {
                 <div className="grid grid-cols-2 gap-4">
                   <InputWithTip
                     label="Setup e integración"
-                    tip="Costos únicos de configuración, integración con sistemas existentes y consultoría inicial"
+                    tip="Incluye horas de desarrollo, configuración y consultoría inicial. Recuerda la 'Regla del 20%': No uses AI si un script tradicional puede resolver el problema."
                     value={inputs.implementationCost}
                     onChange={(v) => updateInput('implementationCost', v)}
                   />
@@ -448,7 +448,7 @@ export default function ROICalculator() {
                     label="Curva aprendizaje (hrs/usuario)"
                     prefix=""
                     suffix="hrs"
-                    tip="Tiempo perdido mientras aprenden. Fórmula: Usuarios × Horas × Costo/Hora × 0.20"
+                    tip="Costo de Oportunidad: Tiempo que los empleados pierden de productividad mientras aprenden la herramienta. Se calcula como: (Horas × Costo Hora × 20% Ineficiencia)."
                     value={inputs.learningCurveHours}
                     onChange={(v) => updateInput('learningCurveHours', v)}
                   />
@@ -486,7 +486,7 @@ export default function ROICalculator() {
                   label="Horas ahorradas/semana"
                   prefix=""
                   suffix="hrs"
-                  tip="Horas semanales que cada usuario ahorra gracias a la automatización con IA"
+                  tip="Hard Savings: Solo cuenta estas horas si se traducen en reducción de headcount, horas extra, o aumento directo de capacidad productiva (FTE Reallocation)."
                   value={inputs.hoursSavedPerWeek}
                   onChange={(v) => updateInput('hoursSavedPerWeek', v)}
                 />
@@ -500,7 +500,7 @@ export default function ROICalculator() {
 
               <SliderWithTip
                 label="Factor de Eficiencia (η)"
-                tip="0.40-0.50 para tareas complejas, 0.60 default, 0.70-0.80 para tareas repetitivas"
+                tip={"Ajuste de Realidad: No todo el tiempo ahorrado es productivo.\n\n• 0.40-0.50: Tareas complejas (Código, Análisis).\n• 0.60: Estándar (Default).\n• 0.80: Tareas repetitivas/Templates."}
                 value={inputs.efficiencyFactor}
                 onChange={(v) => updateInput('efficiencyFactor', v)}
                 min={0.4}
@@ -546,7 +546,7 @@ export default function ROICalculator() {
 
               <SliderWithTip
                 label="Factor de Atribución (α)"
-                tip="% del revenue puramente atribuible a IA. Usar A/B testing para validar. Default: 0.30"
+                tip="¿Cuánto del nuevo ingreso es gracias a la AI? Se recomienda usar A/B testing para definir este factor. (Ej: 30% del valor de un contrato cerrado con ayuda de Copilot)."
                 value={inputs.attributionFactor}
                 onChange={(v) => updateInput('attributionFactor', v)}
                 min={0}
@@ -570,25 +570,25 @@ export default function ROICalculator() {
             <div className="grid grid-cols-2 gap-4">
               <InputWithTip
                 label="Reducción downtime/mes"
-                tip="Ahorro estimado por menor tiempo de inactividad gracias a mantenimiento predictivo y automatización"
+                tip="Ahorros por mitigación de riesgos: Reducción de downtime, multas de compliance evitadas o prevención de fraude."
                 value={inputs.downtimeReduction}
                 onChange={(v) => updateInput('downtimeReduction', v)}
               />
               <InputWithTip
                 label="Ahorro compliance/mes"
-                tip="Reducción en multas, auditorías y costos de cumplimiento normativo gracias a mejor control y documentación"
+                tip="Ahorros por mitigación de riesgos: Reducción de downtime, multas de compliance evitadas o prevención de fraude."
                 value={inputs.complianceSavings}
                 onChange={(v) => updateInput('complianceSavings', v)}
               />
               <InputWithTip
                 label="Fraude prevenido/mes"
-                tip="Pérdidas evitadas gracias a detección temprana de fraude mediante análisis de IA"
+                tip="Ahorros por mitigación de riesgos: Reducción de downtime, multas de compliance evitadas o prevención de fraude."
                 value={inputs.fraudPrevention}
                 onChange={(v) => updateInput('fraudPrevention', v)}
               />
               <InputWithTip
                 label="Reducción retrabajo/mes"
-                tip="Ahorro por menor cantidad de correcciones y repetición de tareas gracias a mejor calidad inicial"
+                tip="Ahorros por mitigación de riesgos: Reducción de downtime, multas de compliance evitadas o prevención de fraude."
                 value={inputs.reworkReduction}
                 onChange={(v) => updateInput('reworkReduction', v)}
               />
