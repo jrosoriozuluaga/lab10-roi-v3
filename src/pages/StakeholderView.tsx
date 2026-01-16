@@ -272,109 +272,11 @@ export default function StakeholderView() {
           </div>
 
           {/* ROI Acumulativo Chart */}
-          <div className="p-6 rounded-xl bg-card border border-border">
-            <h3 className="text-lg font-semibold mb-2">ROI Acumulativo</h3>
-            <p className="text-sm text-muted-foreground mb-4">
-              Calculado vs costo amortizado acumulado
-            </p>
-            <div className="h-[280px] w-full">
-              {loadingMetrics ? <Skeleton className="h-full w-full" /> : <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={cfoChartData}>
-                    <defs>
-                      
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke={chartColors.grid} />
-                    <XAxis dataKey="month" stroke={chartColors.axis} tick={{
-                  fill: chartColors.axis,
-                  fontSize: 12
-                }} />
-                    <YAxis stroke={chartColors.axis} tick={{
-                  fill: chartColors.axis
-                }} tickFormatter={value => `${value}%`} domain={['auto', 'auto']} />
-                    <ReferenceLine y={0} stroke="#666" strokeDasharray="3 3" label={{
-                  value: 'Break-even',
-                  fill: '#666',
-                  fontSize: 11,
-                  position: 'right'
-                }} />
-                    <Tooltip contentStyle={{
-                  backgroundColor: chartColors.tooltipBg,
-                  borderColor: chartColors.tooltipBorder,
-                  color: '#fff',
-                  borderRadius: '8px'
-                }} labelStyle={{
-                  color: chartColors.axis
-                }} formatter={(value: number) => [`${value}%`, 'ROI Acumulativo']} />
-                    <Area type="monotone" dataKey="roi" stroke={chartColors.primary} strokeWidth={2} fill="url(#roiGradientCFO)" dot={{
-                  fill: chartColors.primary,
-                  strokeWidth: 2,
-                  r: 4
-                }} />
-                  </AreaChart>
-                </ResponsiveContainer>}
-            </div>
-          </div>
+          
         </div>
 
         {/* Amortization Breakdown Table */}
-        <div className="p-6 rounded-xl bg-card border border-border">
-          <h3 className="text-lg font-semibold mb-4">Desglose de Amortización</h3>
-          {loadingMetrics ? <div className="space-y-3">
-              {Array.from({
-            length: 4
-          }).map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}
-            </div> : <Table>
-              <TableHeader>
-                <TableRow>
-                  
-                  <TableHead className="text-right">Flujo de Caja</TableHead>
-                  <TableHead className="text-right">Costo Amortizado</TableHead>
-                  <TableHead className="text-right">Valor Generado</TableHead>
-                  <TableHead className="text-right">ROI Mensual</TableHead>
-                  <TableHead className="text-right">Payback Acum.</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {cfoChartData.map((row, index) => <TableRow key={index}>
-                    <TableCell className="font-medium">{row.month}</TableCell>
-                    <TableCell className={`text-right ${row.cashOutflow > 0 ? 'text-destructive font-semibold' : 'text-muted-foreground'}`}>
-                      ${row.cashOutflow.toLocaleString()}
-                    </TableCell>
-                    <TableCell className="text-right text-muted-foreground">
-                      ${Math.round(row.amortizedCost).toLocaleString()}
-                    </TableCell>
-                    <TableCell className="text-right text-success">
-                      ${row.valueRealized.toLocaleString()}
-                    </TableCell>
-                    <TableCell className={`text-right font-semibold ${row.monthlyRoi >= 0 ? 'text-success' : 'text-destructive'}`}>
-                      {row.monthlyRoi >= 0 ? '+' : ''}{row.monthlyRoi}%
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {row.cumulativePaybackPct}%
-                    </TableCell>
-                  </TableRow>)}
-                {/* Totals Row */}
-                <TableRow className="border-t-2 border-border bg-muted/30">
-                  <TableCell className="font-bold">Total</TableCell>
-                  <TableCell className="text-right font-bold text-destructive">
-                    ${totalCashOutflow.toLocaleString()}
-                  </TableCell>
-                  <TableCell className="text-right font-bold">
-                    ${Math.round(totalAmortizedCost).toLocaleString()}
-                  </TableCell>
-                  <TableCell className="text-right font-bold text-success">
-                    ${Math.round(totalValueRealized).toLocaleString()}
-                  </TableCell>
-                  <TableCell className={`text-right font-bold ${cumulativeROI >= 0 ? 'text-success' : 'text-destructive'}`}>
-                    {cumulativeROI >= 0 ? '+' : ''}{cumulativeROI.toFixed(1)}%
-                  </TableCell>
-                  <TableCell className="text-right font-bold">
-                    {latestMetrics?.cumulative_payback_pct || 0}%
-                  </TableCell>
-                </TableRow>
-              </TableBody>
-            </Table>}
-        </div>
+        
       </>;
   };
   const renderCTOView = () => <>
