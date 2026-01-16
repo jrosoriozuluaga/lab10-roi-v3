@@ -5,8 +5,9 @@ import { SmartAlert } from '@/components/SmartAlert';
 import { useRole } from '@/contexts/RoleContext';
 import { DollarSign, Users, TrendingUp, Clock, Target, Cpu, Brain, Zap, Download, Info } from 'lucide-react';
 import { departmentStats, monthlyMetrics, m3Benchmarks } from '@/lib/mockData';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, ReferenceLine } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, ReferenceLine, PieChart, Pie, Cell, Legend } from 'recharts';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 
@@ -37,6 +38,14 @@ export default function Dashboard() {
     });
   };
 
+  // Focus Area Distribution data for CEO Donut Chart
+  const focusAreaData = [
+    { name: 'Eficiencia', value: 50 },
+    { name: 'Revenue Growth', value: 30 },
+    { name: 'Risk Mitigation', value: 20 },
+  ];
+  const focusAreaColors = ['#FDE047', '#A78BFA', '#60A5FA'];
+
   const renderCEOView = () => (
     <>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -44,6 +53,68 @@ export default function Dashboard() {
         <KPICard title="Strategic Alignment" value="48%" subtitle={`Meta M3: ≥${m3Benchmarks.activationRate.target}%`} icon={Target} variant="success" trend="up" trendValue="+8%" />
         <KPICard title="ROI Proyectado M12" value="+45%" subtitle="Break-even estimado: M7" icon={TrendingUp} variant="success" trend="up" />
       </div>
+
+      {/* Strategic Distribution Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        {/* North Star Alignment Card */}
+        <div className="p-6 rounded-xl bg-card border border-border">
+          <h3 className="text-lg font-semibold mb-4">North Star Alignment</h3>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground">Proyectos alineados</span>
+              <span className="text-2xl font-bold text-primary">6/8</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground">Score de alineación</span>
+              <span className="text-xl font-semibold text-success">75%</span>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Los proyectos están mayormente alineados con los objetivos estratégicos de la organización.
+            </p>
+          </div>
+        </div>
+
+        {/* Focus Area Distribution Donut Chart */}
+        <div className="p-6 rounded-xl bg-card border border-border">
+          <h3 className="text-lg font-semibold mb-4">Distribución por Foco Estratégico</h3>
+          <div className="h-[200px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={focusAreaData}
+                  dataKey="value"
+                  nameKey="name"
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={50}
+                  outerRadius={80}
+                  paddingAngle={2}
+                >
+                  {focusAreaData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={focusAreaColors[index]} />
+                  ))}
+                </Pie>
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: chartColors.tooltipBg, 
+                    borderColor: chartColors.tooltipBorder, 
+                    color: '#fff',
+                    borderRadius: '8px'
+                  }}
+                  formatter={(value: number) => [`${value}%`, '']}
+                />
+                <Legend 
+                  verticalAlign="middle" 
+                  align="right" 
+                  layout="vertical"
+                  formatter={(value) => <span className="text-sm text-muted-foreground">{value}</span>}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
+
       <SmartAlert type="info" message="El Net AI Value es negativo pero la tendencia es positiva. Esto es esperado en Mes 3 de implementación." className="mb-6" />
       <div className="p-6 rounded-xl bg-card border border-border">
         <h3 className="text-lg font-semibold mb-4">Tendencia de ROI (Curva J)</h3>
@@ -150,11 +221,27 @@ export default function Dashboard() {
     </>
   );
 
+  // Fixed Activation Rate for AI Lead (42% > 35% target = success)
+  const fixedActivationRate = 42;
+  const activationTarget = 35;
+
   const renderAILeadView = () => (
     <>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <KPICard title="Activation Rate" value={`${activationRate.toFixed(1)}%`} subtitle={`Meta M3: ≥${m3Benchmarks.activationRate.target}%`} icon={Users} variant={activationRate >= m3Benchmarks.activationRate.min ? 'success' : 'warning'} trend="up" trendValue="+8%" />
         <KPICard title="AI MAU" value={`${((activeUsers / totalEmployees) * 100).toFixed(0)}%`} subtitle={`${activeUsers} de ${totalEmployees} usuarios`} icon={Brain} variant="success" />
+        <KPICard 
+          title="Activation Rate" 
+          value={<span className="text-success">{fixedActivationRate}%</span>}
+          subtitle="Training completado / Total empleados"
+          icon={Users} 
+          variant="success" 
+          trend="up" 
+          trendValue="+8%"
+        >
+          <Badge className="mt-2 bg-success/20 text-success border-success/30 text-xs">
+            Target M3: {activationTarget}% - Superado ✓
+          </Badge>
+        </KPICard>
         <KPICard title="Power Users" value={`${((powerUsers / totalEmployees) * 100).toFixed(1)}%`} subtitle={`${powerUsers} usuarios avanzados`} icon={Zap} variant={powerUsers / totalEmployees >= 0.04 ? 'success' : 'warning'} />
       </div>
       <SmartAlert type="warning" message="⚠️ Equipos Legal y HR por debajo del umbral de activación. Considerar training adicional." className="mb-6" />

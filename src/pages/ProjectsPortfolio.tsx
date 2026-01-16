@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Search, ArrowUpDown, Users, Calendar, TrendingUp, Percent, X } from 'lucide-react';
+import { Search, ArrowUpDown, Users, Calendar, TrendingUp, Percent, AlertTriangle, FolderKanban, CheckCircle } from 'lucide-react';
 import { DashboardLayout } from '@/components/DashboardLayout';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -208,6 +208,12 @@ export default function ProjectsPortfolio() {
     }
   };
 
+  // Calculate summary stats
+  const totalProjects = projects.length;
+  const onTrackCount = projects.filter(p => p.status === 'on-track').length;
+  const atRiskCount = projects.filter(p => p.status === 'at-risk' || p.status === 'off-track').length;
+  const deliveryRate = Math.round((onTrackCount / totalProjects) * 100);
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -216,7 +222,7 @@ export default function ProjectsPortfolio() {
           <div>
             <h1 className="text-3xl font-bold text-foreground">Portafolio de Iniciativas AI</h1>
             <p className="text-muted-foreground mt-1">
-              {projects.length} proyectos activos • {projects.filter(p => p.status === 'on-track').length} on track
+              {projects.length} proyectos activos • {onTrackCount} on track
             </p>
           </div>
           <div className="relative w-full sm:w-72">
@@ -227,6 +233,39 @@ export default function ProjectsPortfolio() {
               onChange={(e) => setSearch(e.target.value)}
               className="pl-10"
             />
+          </div>
+        </div>
+
+        {/* Summary Stats */}
+        <div className="grid grid-cols-3 gap-4">
+          {/* Total Projects */}
+          <div className="p-5 rounded-xl bg-card border border-border text-center">
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <FolderKanban className="w-4 h-4 text-muted-foreground" />
+              <p className="text-sm text-muted-foreground">Total Proyectos</p>
+            </div>
+            <p className="text-3xl font-bold text-foreground">{totalProjects}</p>
+          </div>
+          
+          {/* Delivery Rate */}
+          <div className="p-5 rounded-xl bg-card border border-border text-center">
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <CheckCircle className="w-4 h-4 text-muted-foreground" />
+              <p className="text-sm text-muted-foreground">Delivery Rate</p>
+            </div>
+            <p className="text-3xl font-bold text-primary">{deliveryRate}%</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              {onTrackCount} de {totalProjects} on track
+            </p>
+          </div>
+          
+          {/* At Risk */}
+          <div className="p-5 rounded-xl bg-card border border-border text-center">
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <AlertTriangle className="w-4 h-4 text-muted-foreground" />
+              <p className="text-sm text-muted-foreground">En Riesgo</p>
+            </div>
+            <p className="text-3xl font-bold text-warning">{atRiskCount}</p>
           </div>
         </div>
 
