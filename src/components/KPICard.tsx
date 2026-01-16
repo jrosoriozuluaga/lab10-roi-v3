@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils';
 
 interface KPICardProps {
   title: string;
-  value: string | number;
+  value: ReactNode;
   subtitle?: string;
   icon?: LucideIcon;
   trend?: 'up' | 'down' | 'neutral';
