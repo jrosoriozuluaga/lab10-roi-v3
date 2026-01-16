@@ -3,9 +3,28 @@ import { DashboardLayout } from '@/components/DashboardLayout';
 import { KPICard } from '@/components/KPICard';
 import { SmartAlert } from '@/components/SmartAlert';
 import { useRole, Role } from '@/contexts/RoleContext';
-import { DollarSign, Users, TrendingUp, Clock, Target, Cpu, Brain, Zap, ChevronDown } from 'lucide-react';
-import { departmentStats, monthlyMetrics, m3Benchmarks } from '@/lib/mockData';
+import { DollarSign, Users, TrendingUp, Clock, Target, Cpu, Brain, Zap, ChevronDown, Cloud, Server, TrendingDown, Minus } from 'lucide-react';
+import { 
+  departmentStats, 
+  monthlyMetrics, 
+  m3Benchmarks, 
+  apiConsumption, 
+  cloudInfrastructure, 
+  infrastructureTrend,
+  aiToolsDistribution,
+  totalAPICost,
+  totalInfraCost,
+  budgetUtilization,
+} from '@/lib/mockData';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, ReferenceLine, PieChart, Pie, Cell, Legend } from 'recharts';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -215,18 +234,153 @@ export default function StakeholderView() {
 
   const renderCTOView = () => (
     <>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      {/* KPIs Row 1 - Operations */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
         <KPICard title="Delivery Rate" value="52%" subtitle={`Meta M3: ≥${m3Benchmarks.deliveryRate.target}%`} icon={Cpu} variant="success" trend="up" trendValue="+12%" />
         <KPICard title="Error Rate" value="2.1%" subtitle="Objetivo: <3%" icon={Zap} variant="success" />
         <KPICard title="Workflows Producción" value="24" subtitle="n8n activos" icon={Target} variant="default" trend="up" trendValue="+6" />
       </div>
+
+      {/* KPIs Row 2 - Infrastructure Costs */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <KPICard 
+          title="Gasto API Total" 
+          value={`$${totalAPICost.toLocaleString()}`} 
+          subtitle="Este mes" 
+          icon={Cloud} 
+          variant="default" 
+          trend="up" 
+          trendValue="+12%" 
+        />
+        <KPICard 
+          title="Gasto Infraestructura" 
+          value={`$${totalInfraCost.toLocaleString()}`} 
+          subtitle="AWS - Este mes" 
+          icon={Server} 
+          variant="default" 
+          trend="up" 
+          trendValue="+8%" 
+        />
+        <KPICard 
+          title="Budget Utilización" 
+          value={`${budgetUtilization.toFixed(0)}%`} 
+          subtitle={`$${(totalAPICost + totalInfraCost).toLocaleString()} de $20,000`} 
+          icon={DollarSign} 
+          variant={budgetUtilization > 90 ? 'warning' : 'success'} 
+        />
+      </div>
+
       <SmartAlert type="success" message="Todos los sistemas operando dentro de parámetros normales. Latencia promedio: 145ms" className="mb-6" />
+
+      {/* API Consumption & AWS Infrastructure Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        {/* API Consumption Table */}
+        <div className="p-6 rounded-xl bg-card border border-border">
+          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+            <Cloud className="w-5 h-5 text-primary" />
+            Consumo de APIs
+          </h3>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Provider</TableHead>
+                <TableHead>Servicio</TableHead>
+                <TableHead className="text-right">Consumo</TableHead>
+                <TableHead className="text-right">Costo</TableHead>
+                <TableHead className="text-right">Tendencia</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {apiConsumption.map((api, index) => (
+                <TableRow key={index}>
+                  <TableCell className="font-medium">{api.provider}</TableCell>
+                  <TableCell>{api.service}</TableCell>
+                  <TableCell className="text-right text-muted-foreground">
+                    {(api.usage / 1000000).toFixed(2)}M {api.unit}
+                  </TableCell>
+                  <TableCell className="text-right font-medium">${api.cost.toLocaleString()}</TableCell>
+                  <TableCell className="text-right">
+                    <span className={`flex items-center justify-end gap-1 ${
+                      api.trend === 'up' ? 'text-warning' : 
+                      api.trend === 'down' ? 'text-success' : 'text-muted-foreground'
+                    }`}>
+                      {api.trend === 'up' ? <TrendingUp className="w-4 h-4" /> : 
+                       api.trend === 'down' ? <TrendingDown className="w-4 h-4" /> : 
+                       <Minus className="w-4 h-4" />}
+                      {api.trendPercent}%
+                    </span>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+
+        {/* AWS Infrastructure */}
+        <div className="p-6 rounded-xl bg-card border border-border">
+          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+            <Server className="w-5 h-5 text-secondary" />
+            Infraestructura AWS
+          </h3>
+          <div className="space-y-3">
+            {cloudInfrastructure.services.map((service, index) => (
+              <div key={index} className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
+                <div className="flex items-center gap-3">
+                  <div className={`w-2 h-2 rounded-full ${
+                    service.status === 'healthy' ? 'bg-success' :
+                    service.status === 'warning' ? 'bg-warning' : 'bg-destructive'
+                  }`} />
+                  <div>
+                    <p className="font-medium text-sm">{service.name}</p>
+                    <p className="text-xs text-muted-foreground">{service.usage}</p>
+                  </div>
+                </div>
+                <span className="font-semibold">${service.cost.toLocaleString()}</span>
+              </div>
+            ))}
+          </div>
+          <div className="mt-4 pt-4 border-t border-border flex justify-between items-center">
+            <span className="text-muted-foreground">Total AWS</span>
+            <span className="text-xl font-bold">${cloudInfrastructure.totalCost.toLocaleString()}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Cost Trend Chart */}
+      <div className="p-6 rounded-xl bg-card border border-border">
+        <h3 className="text-lg font-semibold mb-4">Tendencia de Costos (API + Cloud)</h3>
+        <div className="h-[300px] w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={infrastructureTrend}>
+              <CartesianGrid strokeDasharray="3 3" stroke={chartColors.grid} />
+              <XAxis dataKey="month" stroke={chartColors.axis} tick={{ fill: chartColors.axis }} />
+              <YAxis stroke={chartColors.axis} tick={{ fill: chartColors.axis }} tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`} />
+              <Tooltip 
+                contentStyle={{ 
+                  backgroundColor: chartColors.tooltipBg, 
+                  borderColor: chartColors.tooltipBorder, 
+                  color: '#fff',
+                  borderRadius: '8px'
+                }}
+                formatter={(value: number, name: string) => [`$${value.toLocaleString()}`, name === 'api' ? 'APIs' : 'Cloud']}
+              />
+              <Legend formatter={(value) => value === 'api' ? 'APIs' : 'Cloud Infrastructure'} />
+              <Bar dataKey="api" stackId="a" fill={chartColors.primary} radius={[0, 0, 0, 0]} />
+              <Bar dataKey="cloud" stackId="a" fill={chartColors.secondary} radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
     </>
   );
 
   // Fixed Activation Rate for AI Lead (42% > 35% target = success)
   const fixedActivationRate = 42;
   const activationTarget = 35;
+
+  // Total tokens consumed
+  const totalTokens = apiConsumption.reduce((sum, api) => sum + api.usage, 0);
+  const costPerUser = totalAPICost / totalEmployees;
 
   const renderAILeadView = () => (
     <>
@@ -248,9 +402,11 @@ export default function StakeholderView() {
         <KPICard title="Power Users" value={`${((powerUsers / totalEmployees) * 100).toFixed(1)}%`} subtitle={`${powerUsers} usuarios avanzados`} icon={Zap} variant={powerUsers / totalEmployees >= 0.04 ? 'success' : 'warning'} />
       </div>
       <SmartAlert type="warning" message="⚠️ Equipos Legal y HR por debajo del umbral de activación. Considerar training adicional." className="mb-6" />
-      <div className="p-6 rounded-xl bg-card border border-border">
+      
+      {/* Adoption by Department Chart */}
+      <div className="p-6 rounded-xl bg-card border border-border mb-6">
         <h3 className="text-lg font-semibold mb-4">Adopción por Departamento</h3>
-        <div className="h-[350px] w-full">
+        <div className="h-[300px] w-full">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={departmentStats} layout="vertical">
               <CartesianGrid strokeDasharray="3 3" stroke={chartColors.grid} />
@@ -268,6 +424,90 @@ export default function StakeholderView() {
               <Bar dataKey="activationRate" fill={chartColors.primary} radius={[0, 4, 4, 0]} />
             </BarChart>
           </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* AI Tools Consumption Section */}
+      <div className="p-6 rounded-xl bg-card border border-border">
+        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+          <Cloud className="w-5 h-5 text-primary" />
+          Consumo de Herramientas AI
+        </h3>
+        
+        {/* Mini Stats Row */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div className="p-4 rounded-lg bg-muted/30 text-center">
+            <p className="text-2xl font-bold text-primary">{(totalTokens / 1000000).toFixed(1)}M</p>
+            <p className="text-sm text-muted-foreground">Tokens Totales</p>
+          </div>
+          <div className="p-4 rounded-lg bg-muted/30 text-center">
+            <p className="text-2xl font-bold text-secondary">${costPerUser.toFixed(2)}</p>
+            <p className="text-sm text-muted-foreground">Costo por Usuario</p>
+          </div>
+          <div className="p-4 rounded-lg bg-muted/30 text-center">
+            <p className="text-2xl font-bold text-foreground">GPT-4 Turbo</p>
+            <p className="text-sm text-muted-foreground">Herramienta más usada (45%)</p>
+          </div>
+        </div>
+
+        {/* Tools Distribution Chart */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="h-[250px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={aiToolsDistribution}
+                  dataKey="value"
+                  nameKey="name"
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={50}
+                  outerRadius={80}
+                  paddingAngle={2}
+                >
+                  {aiToolsDistribution.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={[chartColors.primary, chartColors.secondary, chartColors.softBlue, '#34D399'][index]} />
+                  ))}
+                </Pie>
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: chartColors.tooltipBg, 
+                    borderColor: chartColors.tooltipBorder, 
+                    color: '#fff',
+                    borderRadius: '8px'
+                  }}
+                  formatter={(value: number) => [`${value}%`, '']}
+                />
+                <Legend 
+                  verticalAlign="middle" 
+                  align="right" 
+                  layout="vertical"
+                  formatter={(value) => <span className="text-sm text-muted-foreground">{value}</span>}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+          
+          {/* API List for AI Lead */}
+          <div className="space-y-2">
+            {apiConsumption.map((api, index) => (
+              <div key={index} className="flex items-center justify-between p-3 rounded-lg bg-muted/20">
+                <div>
+                  <p className="font-medium text-sm">{api.provider} - {api.service}</p>
+                  <p className="text-xs text-muted-foreground">{(api.usage / 1000000).toFixed(2)}M tokens</p>
+                </div>
+                <div className="text-right">
+                  <p className="font-semibold">${api.cost.toLocaleString()}</p>
+                  <span className={`text-xs ${
+                    api.trend === 'up' ? 'text-warning' : 
+                    api.trend === 'down' ? 'text-success' : 'text-muted-foreground'
+                  }`}>
+                    {api.trend === 'up' ? '↑' : api.trend === 'down' ? '↓' : '→'} {api.trendPercent}%
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </>

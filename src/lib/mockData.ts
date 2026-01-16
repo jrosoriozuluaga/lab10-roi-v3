@@ -3,6 +3,75 @@ import { faker } from '@faker-js/faker';
 // Seed for consistent data
 faker.seed(42);
 
+// ============= API & Infrastructure Consumption =============
+
+export interface APIConsumption {
+  provider: string;
+  service: string;
+  usage: number;
+  unit: string;
+  cost: number;
+  trend: 'up' | 'down' | 'stable';
+  trendPercent: number;
+}
+
+export interface CloudService {
+  name: string;
+  usage: string;
+  cost: number;
+  status: 'healthy' | 'warning' | 'critical';
+}
+
+export interface CloudInfrastructure {
+  provider: 'AWS' | 'GCP' | 'Azure';
+  services: CloudService[];
+  totalCost: number;
+  monthlyBudget: number;
+}
+
+export const apiConsumption: APIConsumption[] = [
+  { provider: 'OpenAI', service: 'GPT-4 Turbo', usage: 2450000, unit: 'tokens', cost: 4850, trend: 'up', trendPercent: 15 },
+  { provider: 'OpenAI', service: 'GPT-3.5', usage: 8200000, unit: 'tokens', cost: 1640, trend: 'down', trendPercent: 8 },
+  { provider: 'OpenAI', service: 'Embeddings', usage: 12500000, unit: 'tokens', cost: 125, trend: 'stable', trendPercent: 2 },
+  { provider: 'Anthropic', service: 'Claude 3', usage: 890000, unit: 'tokens', cost: 2670, trend: 'up', trendPercent: 25 },
+  { provider: 'Google', service: 'Gemini Pro', usage: 1200000, unit: 'tokens', cost: 960, trend: 'up', trendPercent: 18 },
+];
+
+export const cloudInfrastructure: CloudInfrastructure = {
+  provider: 'AWS',
+  services: [
+    { name: 'EC2 (Compute)', usage: '24 instancias', cost: 3200, status: 'healthy' },
+    { name: 'Lambda', usage: '1.2M invocaciones', cost: 180, status: 'healthy' },
+    { name: 'S3 (Storage)', usage: '850 GB', cost: 45, status: 'healthy' },
+    { name: 'RDS (Database)', usage: '2 instancias', cost: 890, status: 'warning' },
+    { name: 'SageMaker', usage: '8 endpoints', cost: 2400, status: 'healthy' },
+    { name: 'CloudWatch', usage: 'Logs + Metrics', cost: 120, status: 'healthy' },
+  ],
+  totalCost: 6835,
+  monthlyBudget: 8000,
+};
+
+export const infrastructureTrend = [
+  { month: 'Ene', api: 7200, cloud: 5800, total: 13000 },
+  { month: 'Feb', api: 8100, cloud: 6100, total: 14200 },
+  { month: 'Mar', api: 10245, cloud: 6835, total: 17080 },
+];
+
+export const aiToolsDistribution = [
+  { name: 'GPT-4 Turbo', value: 45, fill: 'hsl(var(--chart-1))' },
+  { name: 'GPT-3.5', value: 30, fill: 'hsl(var(--chart-2))' },
+  { name: 'Claude 3', value: 15, fill: 'hsl(var(--chart-3))' },
+  { name: 'Gemini Pro', value: 10, fill: 'hsl(var(--chart-4))' },
+];
+
+// Total API cost calculation
+export const totalAPICost = apiConsumption.reduce((sum, api) => sum + api.cost, 0);
+export const totalInfraCost = cloudInfrastructure.totalCost;
+export const totalMonthlyBudget = 20000;
+export const budgetUtilization = ((totalAPICost + totalInfraCost) / totalMonthlyBudget) * 100;
+
+// ============= Employee & Department Types =============
+
 export type Department = 'Engineering' | 'Sales' | 'Operations' | 'Marketing' | 'Finance' | 'HR' | 'Legal';
 
 export interface Employee {
