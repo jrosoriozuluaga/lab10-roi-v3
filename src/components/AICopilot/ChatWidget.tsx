@@ -45,7 +45,11 @@ export function ChatWidget() {
   const handleSend = async (messageOverride?: string) => {
     const textToSend = typeof messageOverride === "string" ? messageOverride : input;
 
-    if (!textToSend.trim() || isLoading || !contextData) return;
+    if (!textToSend.trim() || isLoading) return;
+
+    if (typeof messageOverride === 'string') {
+      setInput(messageOverride);
+    }
 
     const userMessage: ChatMessageType = {
       id: Date.now().toString(),
@@ -59,7 +63,14 @@ export function ChatWidget() {
     setIsLoading(true);
 
     try {
-      const { response, chartData } = await sendMessage(textToSend.trim(), contextData);
+      // Ensure context is available
+      let activeContext = contextData;
+      if (!activeContext) {
+        activeContext = await gatherContextData();
+        setContextData(activeContext);
+      }
+
+      const { response, chartData } = await sendMessage(textToSend.trim(), activeContext);
 
       const assistantMessage: ChatMessageType = {
         id: (Date.now() + 1).toString(),
