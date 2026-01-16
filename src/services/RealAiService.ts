@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { calculateDepartmentStats } from "@/hooks/useMetrics";
+import { calculateBreakEvenProjection, type ROICalculation as ROICalcType } from "@/lib/roiCalculations";
 
 export interface ROICalculation {
   month_label: string;
@@ -57,6 +58,21 @@ export interface FinancialSettings {
   fiscal_year_start: string;
 }
 
+export interface BreakEvenContext {
+  projectedMonth: number | null;
+  isAchieved: boolean;
+  confidence: 'high' | 'medium' | 'low';
+  monthsRemaining: number | null;
+  projectedDate: string | null;
+  methodology: string;
+  projectedValues: Array<{
+    month: number;
+    label: string;
+    projectedBenefit: number;
+    projectedCumulative: number;
+  }>;
+}
+
 export interface DashboardContext {
   summary: {
     netAIValue: string;
@@ -92,6 +108,8 @@ export interface DashboardContext {
   roiCalculations: ROICalculation[];
   roiSettings: ROISettings | null;
   financialSettings: FinancialSettings | null;
+  // Break-even projection
+  breakEven: BreakEvenContext | null;
 }
 
 export interface ChatMessage {
@@ -276,6 +294,22 @@ export async function gatherContextData(): Promise<DashboardContext> {
     return `${value >= 0 ? '' : '-'}$${absValue.toLocaleString()}`;
   };
 
+  // Calculate break-even projection
+  let breakEven: BreakEvenContext | null = null;
+  if (roiCalculations.length > 0) {
+    const totalInvestment = financialSettings?.total_investment || 250000;
+    const projection = calculateBreakEvenProjection(roiCalculations as ROICalcType[], totalInvestment);
+    breakEven = {
+      projectedMonth: projection.breakEvenMonth,
+      isAchieved: projection.isAchieved,
+      confidence: projection.confidence,
+      monthsRemaining: projection.monthsRemaining,
+      projectedDate: projection.projectedDate,
+      methodology: projection.methodology,
+      projectedValues: projection.projectedValues,
+    };
+  }
+
   return {
     summary: {
       netAIValue: formatNetAIValue(netAIValue),
@@ -297,6 +331,7 @@ export async function gatherContextData(): Promise<DashboardContext> {
     roiCalculations,
     roiSettings,
     financialSettings,
+    breakEven,
   };
 }
 

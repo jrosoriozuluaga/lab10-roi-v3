@@ -4,8 +4,9 @@ import { KPICard } from '@/components/KPICard';
 import { SmartAlert } from '@/components/SmartAlert';
 import { useRole, Role } from '@/contexts/RoleContext';
 import { DollarSign, Users, TrendingUp, Clock, Target, Cpu, Brain, Zap, ChevronDown, Cloud, Server, TrendingDown, Minus, ShieldCheck, Wallet, PiggyBank, CheckCircle, AlertTriangle, Lightbulb, ArrowRight, FolderKanban } from 'lucide-react';
-import { useSummaryMetrics, useMonthlyMetrics, useFinancialSettings, useDepartmentStats, useProjects, transformMetricsForCharts } from '@/hooks/useMetrics';
+import { useSummaryMetrics, useMonthlyMetrics, useDepartmentStats, useProjects, transformMetricsForCharts } from '@/hooks/useMetrics';
 import { useBusinessMetrics, transformForChart } from '@/hooks/useBusinessMetrics';
+import { useUnifiedROIMetrics, useFinancialSettings } from '@/hooks/useROIData';
 import { m3Benchmarks, apiConsumption, cloudInfrastructure, infrastructureTrend, aiToolsDistribution, totalAPICost, totalInfraCost, budgetUtilization, generateAlerts } from '@/lib/mockData';
 import { Link } from 'react-router-dom';
 import { useEmployees } from '@/hooks/useMetrics';
@@ -68,8 +69,11 @@ export default function StakeholderView() {
   const { timeline: roiTimeline, current: roiCurrent, isLoading: loadingROI } = useBusinessMetrics();
   const roiChartData = transformForChart(roiTimeline);
   
+  // Use unified ROI metrics for break-even projection
+  const { data: unifiedROI, isLoading: loadingUnifiedROI } = useUnifiedROIMetrics();
+  
   const chartData = metrics ? transformMetricsForCharts(metrics) : [];
-  const isLoading = loadingSummary || loadingMetrics || loadingSettings || loadingROI;
+  const isLoading = loadingSummary || loadingMetrics || loadingSettings || loadingROI || loadingUnifiedROI;
 
   // Calculate derived values from real data
   const totalEmployees = summary?.totalEmployees || 512;
@@ -113,7 +117,18 @@ export default function StakeholderView() {
           </> : <>
             <KPICard title="Net AI Value" value={formatCurrency(netAIValue)} subtitle={`Mes ${metrics?.length || 3} - Tendencia al alza`} icon={DollarSign} variant={netAIValue >= 0 ? 'success' : 'warning'} trend="up" trendValue="+15% vs M2" />
             <KPICard title="Strategic Alignment" value={`${activationRate}%`} subtitle={`Meta M3: ≥${m3Benchmarks.activationRate.target}%`} icon={Target} variant="success" trend="up" trendValue="+8%" />
-            <KPICard title="ROI Acumulativo" value={`${cumulativeROI >= 0 ? '+' : ''}${cumulativeROI.toFixed(1)}%`} subtitle="Break-even estimado: M7" icon={TrendingUp} variant={cumulativeROI >= 0 ? 'success' : 'warning'} trend="up" />
+            <KPICard 
+              title="ROI Acumulativo" 
+              value={`${cumulativeROI >= 0 ? '+' : ''}${cumulativeROI.toFixed(1)}%`} 
+              subtitle={unifiedROI?.breakEvenIsAchieved 
+                ? 'Break-even alcanzado' 
+                : `Break-even estimado: M${unifiedROI?.breakEvenMonth || '?'} (${unifiedROI?.breakEvenMonthsRemaining || '?'} meses)`
+              } 
+              icon={TrendingUp} 
+              variant={cumulativeROI >= 0 ? 'success' : 'warning'} 
+              trend="up" 
+              trendValue={`Confianza: ${unifiedROI?.breakEvenConfidence === 'high' ? 'Alta' : unifiedROI?.breakEvenConfidence === 'medium' ? 'Media' : 'Baja'}`}
+            />
           </>}
       </div>
 
@@ -238,7 +253,19 @@ export default function StakeholderView() {
               <KPICard title="Inversión Total" value={formatCurrency(investment)} subtitle="100% Comprometido (M1)" icon={Wallet} variant="default" />
               <KPICard title="Recuperado" value={formatCurrency(totalValueRealized)} subtitle={`${latestMetrics?.cumulative_payback_pct || 0}% del total`} icon={PiggyBank} variant="warning" trend="up" trendValue={`+${formatCurrency(latestMetrics?.value_realized || 0)} M${metrics?.length || 3}`} />
               <KPICard title="ROI Acumulativo" value={`${cumulativeROI >= 0 ? '+' : ''}${cumulativeROI.toFixed(1)}%`} subtitle="vs Inversión Amortizada" icon={TrendingUp} variant={cumulativeROI >= 0 ? 'success' : 'warning'} />
-              <KPICard title="Payback Proyectado" value="14 meses" subtitle="A tasa actual" icon={Clock} variant="default" />
+              <KPICard 
+                title="Payback Proyectado" 
+                value={unifiedROI?.breakEvenIsAchieved ? 'Alcanzado' : `Mes ${unifiedROI?.breakEvenMonth || '?'}`} 
+                subtitle={unifiedROI?.breakEvenIsAchieved 
+                  ? 'Inversión recuperada' 
+                  : unifiedROI?.breakEvenProjectedDate 
+                    ? `${unifiedROI.breakEvenMonthsRemaining} meses (${unifiedROI.breakEvenProjectedDate})` 
+                    : 'A tasa actual'
+                } 
+                icon={Clock} 
+                variant={unifiedROI?.breakEvenIsAchieved ? 'success' : 'default'} 
+                trendValue={`Confianza: ${unifiedROI?.breakEvenConfidence === 'high' ? 'Alta' : unifiedROI?.breakEvenConfidence === 'medium' ? 'Media' : 'Baja'}`}
+              />
             </>}
         </div>
 

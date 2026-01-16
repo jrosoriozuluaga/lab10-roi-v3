@@ -53,6 +53,26 @@ REGLA: Cuando hables de "generar valor" o "ROI positivo", usa cumulative_net_val
    - monthly_amortized: Monthly amortization amount
    - fiscal_year_start: Start of fiscal year
 
+4. **breakEven** - Proyección de recuperación de inversión:
+   - projectedMonth: Mes estimado para alcanzar break-even (cuando cumulative_net_value >= 0)
+   - isAchieved: Si ya se recuperó la inversión
+   - confidence: 'high' | 'medium' | 'low' basado en estabilidad de tendencia de crecimiento
+   - monthsRemaining: Meses restantes desde el mes actual hasta break-even
+   - projectedDate: Fecha estimada (ej: "Agosto 2026")
+   - methodology: Descripción del cálculo y factores usados
+   - projectedValues: Array con proyección mes a mes hasta break-even
+
+CÁLCULO DE BREAK-EVEN:
+- Break-even = primer mes donde cumulative_net_value >= 0
+- La proyección usa tasa de crecimiento promedio del monthly_net_benefit de los últimos 3 meses
+- Se aplica factor conservador del 75% para mayor precisión
+- Confianza se basa en estabilidad de la tendencia:
+  - Alta: variación < 10%, break-even < 12 meses
+  - Media: variación moderada o 12-18 meses
+  - Baja: alta variabilidad o > 18 meses
+
+REGLA BREAK-EVEN: Cuando el usuario pregunte "cuándo recuperaremos la inversión" o "break-even", usa los datos de breakEven para dar una respuesta precisa con el mes proyectado, meses restantes, fecha estimada y nivel de confianza.
+
 CALCULATION FORMULAS (use when explaining metrics):
 - Gross FTE Savings = active_users × hours_saved_per_user_week × 4 weeks × avg_hourly_rate × efficiency_factor
 - Net FTE Savings = Gross FTE Savings × attribution_factor
@@ -61,7 +81,7 @@ CALCULATION FORMULAS (use when explaining metrics):
 - Monthly ROI = (net_ai_value / monthly_costs) × 100
 - Cumulative ROI = (cumulative_net_value / total_investment) × 100
 
-When asked about specific values, ALWAYS reference the exact data from roiCalculations, roiSettings, or financialSettings.`;
+When asked about specific values, ALWAYS reference the exact data from roiCalculations, roiSettings, financialSettings, or breakEven.`;
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {

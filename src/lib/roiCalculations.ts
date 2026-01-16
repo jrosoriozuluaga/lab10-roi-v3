@@ -289,3 +289,156 @@ export function formatCurrency(value: number, compact = false): string {
 export function formatPercentage(value: number, decimals = 1): string {
   return `${value >= 0 ? '+' : ''}${value.toFixed(decimals)}%`;
 }
+
+/**
+ * Break-Even Projection Interface
+ */
+export interface BreakEvenProjection {
+  breakEvenMonth: number | null;
+  isAchieved: boolean;
+  confidence: 'high' | 'medium' | 'low';
+  monthsRemaining: number | null;
+  projectedDate: string | null;
+  projectedValues: Array<{
+    month: number;
+    label: string;
+    projectedBenefit: number;
+    projectedCumulative: number;
+  }>;
+  methodology: string;
+}
+
+/**
+ * Calculate projected break-even month based on trend analysis
+ * 
+ * @param calculations - Array of ROI calculations from database
+ * @param totalInvestment - Total investment amount (default: 250000)
+ * @returns BreakEvenProjection with all projection details
+ */
+export function calculateBreakEvenProjection(
+  calculations: ROICalculation[],
+  totalInvestment: number = 250000
+): BreakEvenProjection {
+  // If no calculations, return null projection
+  if (!calculations || calculations.length === 0) {
+    return {
+      breakEvenMonth: null,
+      isAchieved: false,
+      confidence: 'low',
+      monthsRemaining: null,
+      projectedDate: null,
+      projectedValues: [],
+      methodology: 'Datos insuficientes para proyección',
+    };
+  }
+
+  // Check if break-even already achieved (cumulative_net_value >= 0)
+  const achievedMonth = calculations.find(c => Number(c.cumulative_net_value) >= 0);
+  if (achievedMonth) {
+    return {
+      breakEvenMonth: achievedMonth.month_index,
+      isAchieved: true,
+      confidence: 'high',
+      monthsRemaining: 0,
+      projectedDate: achievedMonth.month_label,
+      projectedValues: [],
+      methodology: 'Break-even alcanzado en datos históricos',
+    };
+  }
+
+  // Get the last 3 months of monthly_net_benefit to calculate growth rate
+  const lastMonths = calculations.slice(-3);
+  const benefits = lastMonths.map(c => Number(c.monthly_net_benefit));
+  
+  // Calculate average growth rate
+  let avgGrowthRate = 0;
+  let growthRates: number[] = [];
+  
+  if (benefits.length >= 2) {
+    for (let i = 1; i < benefits.length; i++) {
+      if (benefits[i - 1] > 0) {
+        const rate = (benefits[i] - benefits[i - 1]) / benefits[i - 1];
+        growthRates.push(rate);
+      }
+    }
+    if (growthRates.length > 0) {
+      avgGrowthRate = growthRates.reduce((a, b) => a + b, 0) / growthRates.length;
+    }
+  }
+
+  // Get current state
+  const latest = calculations[calculations.length - 1];
+  const currentMonth = latest.month_index;
+  let currentCumulative = Number(latest.cumulative_net_value);
+  let currentBenefit = Number(latest.monthly_net_benefit);
+
+  // Project future months until break-even or max 24 months
+  const projectedValues: BreakEvenProjection['projectedValues'] = [];
+  let breakEvenMonth: number | null = null;
+  
+  // Use conservative growth rate (75% of average) for projection
+  const conservativeGrowthRate = avgGrowthRate * 0.75;
+  
+  for (let month = currentMonth + 1; month <= currentMonth + 24; month++) {
+    // Project benefit with conservative growth
+    currentBenefit = currentBenefit * (1 + conservativeGrowthRate);
+    currentCumulative = currentCumulative + currentBenefit;
+    
+    projectedValues.push({
+      month,
+      label: `M${month}`,
+      projectedBenefit: Math.round(currentBenefit),
+      projectedCumulative: Math.round(currentCumulative),
+    });
+    
+    if (currentCumulative >= 0 && !breakEvenMonth) {
+      breakEvenMonth = month;
+      break;
+    }
+  }
+
+  // Calculate months remaining from current month
+  const monthsRemaining = breakEvenMonth ? breakEvenMonth - currentMonth : null;
+
+  // Calculate projected date
+  let projectedDate: string | null = null;
+  if (breakEvenMonth) {
+    const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
+                       'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+    const now = new Date();
+    const targetDate = new Date(now.getFullYear(), now.getMonth() + (monthsRemaining || 0));
+    projectedDate = `${monthNames[targetDate.getMonth()]} ${targetDate.getFullYear()}`;
+  }
+
+  // Determine confidence based on trend stability and time to break-even
+  let confidence: 'high' | 'medium' | 'low' = 'medium';
+  
+  if (growthRates.length >= 2) {
+    const variance = growthRates.reduce((sum, rate) => 
+      sum + Math.pow(rate - avgGrowthRate, 2), 0) / growthRates.length;
+    const stdDev = Math.sqrt(variance);
+    
+    if (stdDev < 0.1 && breakEvenMonth && breakEvenMonth <= 12) {
+      confidence = 'high';
+    } else if (stdDev > 0.25 || !breakEvenMonth || breakEvenMonth > 18) {
+      confidence = 'low';
+    }
+  } else {
+    confidence = 'low';
+  }
+
+  // Build methodology explanation
+  const methodology = `Proyección basada en tasa de crecimiento promedio del ${(avgGrowthRate * 100).toFixed(1)}% mensual en beneficios netos. ` +
+    `Se aplica factor conservador del 75%. ` +
+    `Confianza ${confidence === 'high' ? 'alta' : confidence === 'medium' ? 'media' : 'baja'} basada en estabilidad de tendencia.`;
+
+  return {
+    breakEvenMonth,
+    isAchieved: false,
+    confidence,
+    monthsRemaining,
+    projectedDate,
+    projectedValues: projectedValues.slice(0, 6), // Only return next 6 months
+    methodology,
+  };
+}
