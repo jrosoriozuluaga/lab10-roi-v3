@@ -9,9 +9,10 @@ import {
   useMonthlyMetrics, 
   useFinancialSettings, 
   useDepartmentStats, 
-  useProjects,
-  transformMetricsForCharts 
+  useProjects
 } from '@/hooks/useMetrics';
+import { useBusinessMetrics, transformForChart } from '@/hooks/useBusinessMetrics';
+import { formatCurrency as formatCurrencyUtil } from '@/lib/roiCalculations';
 import { 
   m3Benchmarks, 
   apiConsumption, 
@@ -70,15 +71,22 @@ export default function StakeholderView() {
   const { role, setRole } = useRole();
   const [selectedRole, setSelectedRole] = useState<Role>(role || 'CEO');
 
-  // Fetch data from database
+  // ============================================
+  // SINGLE SOURCE OF TRUTH: useBusinessMetrics
+  // All ROI data comes from roi_calculations table
+  // ============================================
+  const { history: roiHistory, current: roiCurrent, isLoading: loadingROI } = useBusinessMetrics();
+  
+  // Other data sources (non-ROI)
   const { data: summary, isLoading: loadingSummary } = useSummaryMetrics();
   const { data: metrics, isLoading: loadingMetrics } = useMonthlyMetrics();
   const { data: settings, isLoading: loadingSettings } = useFinancialSettings();
   const { data: departmentStats, isLoading: loadingDepts } = useDepartmentStats();
   const { data: projects, isLoading: loadingProjects } = useProjects();
 
-  const chartData = metrics ? transformMetricsForCharts(metrics) : [];
-  const isLoading = loadingSummary || loadingMetrics || loadingSettings;
+  // Transform ROI data for charts - using SINGLE SOURCE OF TRUTH
+  const chartData = transformForChart(roiHistory);
+  const isLoading = loadingSummary || loadingMetrics || loadingSettings || loadingROI;
 
   // Calculate derived values from real data
   const totalEmployees = summary?.totalEmployees || 512;
@@ -87,17 +95,19 @@ export default function StakeholderView() {
   const deliveryRate = summary?.deliveryRate || 74;
   const powerUsers = departmentStats?.reduce((sum, d) => sum + d.powerUsers, 0) || 40;
 
-  // Financial calculations from metrics
+  // ============================================
+  // ROI VALUES FROM SINGLE SOURCE OF TRUTH
+  // ============================================
+  const netAIValue = roiCurrent ? Number(roiCurrent.cumulative_net_value) : 0;
+  const cumulativeROI = roiCurrent ? Number(roiCurrent.cumulative_roi) : 0;
+  const monthlyROI = roiCurrent ? Number(roiCurrent.monthly_roi) : 0;
+  const monthlyNetValue = roiCurrent ? Number(roiCurrent.net_ai_value) : 0;
+  
+  // Financial metrics from monthly_metrics (for cash flow display only)
   const latestMetrics = metrics?.[metrics.length - 1];
   const totalCashOutflow = metrics?.reduce((sum, m) => sum + m.cash_outflow, 0) || 250000;
   const totalValueRealized = latestMetrics?.cumulative_value || 0;
   const totalAmortizedCost = metrics?.reduce((sum, m) => sum + m.amortized_cost, 0) || 0;
-  const netAIValue = totalValueRealized - totalAmortizedCost;
-  
-  // Cumulative ROI = (cumulative_value - cumulative_amortized) / cumulative_amortized * 100
-  const cumulativeROI = totalAmortizedCost > 0 
-    ? ((totalValueRealized - totalAmortizedCost) / totalAmortizedCost * 100)
-    : 0;
 
   const handleRoleChange = (newRole: Role) => {
     setSelectedRole(newRole);
@@ -124,13 +134,13 @@ export default function StakeholderView() {
         ) : (
           <>
             <KPICard 
-              title="Net AI Value" 
+              title="Net AI Value (Acumulado)" 
               value={formatCurrency(netAIValue)} 
-              subtitle={`Mes ${metrics?.length || 3} - Tendencia al alza`}
+              subtitle={`${roiCurrent?.month_label || 'M3'} - ROI acumulado: ${cumulativeROI.toFixed(0)}%`}
               icon={DollarSign} 
               variant={netAIValue >= 0 ? 'success' : 'warning'} 
-              trend="up" 
-              trendValue="+15% vs M2" 
+              trend={monthlyNetValue >= 0 ? 'up' : 'down'} 
+              trendValue={`${monthlyNetValue >= 0 ? '+' : ''}${formatCurrencyUtil(monthlyNetValue, true)} este mes`} 
             />
             <KPICard 
               title="Strategic Alignment" 
@@ -144,10 +154,10 @@ export default function StakeholderView() {
             <KPICard 
               title="ROI Acumulativo" 
               value={`${cumulativeROI >= 0 ? '+' : ''}${cumulativeROI.toFixed(1)}%`} 
-              subtitle="Break-even estimado: M7" 
+              subtitle={`ROI mensual: ${monthlyROI >= 0 ? '+' : ''}${monthlyROI.toFixed(1)}%`}
               icon={TrendingUp} 
               variant={cumulativeROI >= 0 ? 'success' : 'warning'} 
-              trend="up" 
+              trend={monthlyROI >= 0 ? 'up' : 'down'} 
             />
           </>
         )}
@@ -284,22 +294,24 @@ export default function StakeholderView() {
     const investment = settings?.total_investment || 250000;
     const monthlyAmortized = settings?.monthly_amortized || (investment / 12);
     
-    // Calculate cumulative ROI for chart (showing the J-curve progression)
-    const cfoChartData = metrics?.map((m, index) => {
-      const cumulativeAmortized = (index + 1) * (m.amortized_cost || monthlyAmortized);
-      const cumulativeROI = cumulativeAmortized > 0 
-        ? ((m.cumulative_value || 0) - cumulativeAmortized) / cumulativeAmortized * 100
-        : 0;
+    // ============================================
+    // CFO CHART DATA FROM SINGLE SOURCE OF TRUTH
+    // ROI values come from roi_calculations (roiHistory)
+    // Cash flow values come from monthly_metrics (for display)
+    // ============================================
+    const cfoChartData = roiHistory.map((calc) => {
+      // Get corresponding monthly_metrics for cash flow display
+      const monthMetric = metrics?.find(m => m.month_index === calc.month_index);
       return {
-        month: m.month_label,
-        roi: Math.round(cumulativeROI * 10) / 10,
-        cashOutflow: m.cash_outflow,
-        valueRealized: m.value_realized,
-        amortizedCost: m.amortized_cost,
-        cumulativePaybackPct: m.cumulative_payback_pct || 0,
-        monthlyRoi: m.monthly_roi,
+        month: calc.month_label,
+        roi: Math.round(Number(calc.cumulative_roi) * 10) / 10, // FROM SINGLE SOURCE
+        cashOutflow: monthMetric?.cash_outflow || 0,
+        valueRealized: monthMetric?.value_realized || 0,
+        amortizedCost: monthMetric?.amortized_cost || monthlyAmortized,
+        cumulativePaybackPct: monthMetric?.cumulative_payback_pct || 0,
+        monthlyRoi: Math.round(Number(calc.monthly_roi) * 10) / 10, // FROM SINGLE SOURCE
       };
-    }) || [];
+    });
 
     return (
       <>
@@ -333,7 +345,7 @@ export default function StakeholderView() {
               <KPICard 
                 title="ROI Acumulativo" 
                 value={`${cumulativeROI >= 0 ? '+' : ''}${cumulativeROI.toFixed(1)}%`}
-                subtitle="vs Inversión Amortizada" 
+                subtitle={`ROI mensual: ${monthlyROI >= 0 ? '+' : ''}${monthlyROI.toFixed(1)}%`}
                 icon={TrendingUp} 
                 variant={cumulativeROI >= 0 ? 'success' : 'warning'} 
               />
