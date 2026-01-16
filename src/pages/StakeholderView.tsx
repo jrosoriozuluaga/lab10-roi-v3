@@ -5,8 +5,14 @@ import { SmartAlert } from '@/components/SmartAlert';
 import { useRole, Role } from '@/contexts/RoleContext';
 import { DollarSign, Users, TrendingUp, Clock, Target, Cpu, Brain, Zap, ChevronDown, Cloud, Server, TrendingDown, Minus, ShieldCheck, Wallet, PiggyBank } from 'lucide-react';
 import { 
-  departmentStats, 
-  monthlyMetrics, 
+  useSummaryMetrics, 
+  useMonthlyMetrics, 
+  useFinancialSettings, 
+  useDepartmentStats, 
+  useProjects,
+  transformMetricsForCharts 
+} from '@/hooks/useMetrics';
+import { 
   m3Benchmarks, 
   apiConsumption, 
   cloudInfrastructure, 
@@ -15,9 +21,6 @@ import {
   totalAPICost,
   totalInfraCost,
   budgetUtilization,
-  cashFlowData,
-  financialSettings,
-  roiTrendData,
 } from '@/lib/mockData';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, ReferenceLine, PieChart, Pie, Cell, Legend } from 'recharts';
 import {
@@ -30,6 +33,7 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -48,15 +52,49 @@ const chartColors = {
   tooltipBorder: '#333333',
 };
 
-const totalEmployees = 500;
-const activeUsers = departmentStats.reduce((sum, d) => sum + d.activeUsers, 0);
-const powerUsers = departmentStats.reduce((sum, d) => sum + d.powerUsers, 0);
-
 const roles: Role[] = ['CEO', 'CFO', 'CTO', 'AI Lead'];
+
+// Helper to format currency
+const formatCurrency = (value: number): string => {
+  const absValue = Math.abs(value);
+  if (absValue >= 1000) {
+    return `${value >= 0 ? '' : '−'}$${(absValue / 1000).toFixed(1)}k`;
+  }
+  return `${value >= 0 ? '' : '−'}$${absValue.toLocaleString()}`;
+};
 
 export default function StakeholderView() {
   const { role, setRole } = useRole();
   const [selectedRole, setSelectedRole] = useState<Role>(role || 'CEO');
+
+  // Fetch data from database
+  const { data: summary, isLoading: loadingSummary } = useSummaryMetrics();
+  const { data: metrics, isLoading: loadingMetrics } = useMonthlyMetrics();
+  const { data: settings, isLoading: loadingSettings } = useFinancialSettings();
+  const { data: departmentStats, isLoading: loadingDepts } = useDepartmentStats();
+  const { data: projects, isLoading: loadingProjects } = useProjects();
+
+  const chartData = metrics ? transformMetricsForCharts(metrics) : [];
+  const isLoading = loadingSummary || loadingMetrics || loadingSettings;
+
+  // Calculate derived values from real data
+  const totalEmployees = summary?.totalEmployees || 512;
+  const activeUsers = summary?.activeUsers || 292;
+  const activationRate = summary?.activationRate || 57;
+  const deliveryRate = summary?.deliveryRate || 74;
+  const powerUsers = departmentStats?.reduce((sum, d) => sum + d.powerUsers, 0) || 40;
+
+  // Financial calculations from metrics
+  const latestMetrics = metrics?.[metrics.length - 1];
+  const totalCashOutflow = metrics?.reduce((sum, m) => sum + m.cash_outflow, 0) || 250000;
+  const totalValueRealized = latestMetrics?.cumulative_value || 0;
+  const totalAmortizedCost = metrics?.reduce((sum, m) => sum + m.amortized_cost, 0) || 0;
+  const netAIValue = totalValueRealized - totalAmortizedCost;
+  
+  // Cumulative ROI = (cumulative_value - cumulative_amortized) / cumulative_amortized * 100
+  const cumulativeROI = totalAmortizedCost > 0 
+    ? ((totalValueRealized - totalAmortizedCost) / totalAmortizedCost * 100)
+    : 0;
 
   const handleRoleChange = (newRole: Role) => {
     setSelectedRole(newRole);
@@ -74,9 +112,42 @@ export default function StakeholderView() {
   const renderCEOView = () => (
     <>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <KPICard title="Net AI Value" value="−$12,500" subtitle="Mes 3 - Tendencia al alza" icon={DollarSign} variant="warning" trend="up" trendValue="+15% vs M2" />
-        <KPICard title="Strategic Alignment" value="48%" subtitle={`Meta M3: ≥${m3Benchmarks.activationRate.target}%`} icon={Target} variant="success" trend="up" trendValue="+8%" />
-        <KPICard title="ROI Proyectado M12" value="+45%" subtitle="Break-even estimado: M7" icon={TrendingUp} variant="success" trend="up" />
+        {isLoading ? (
+          <>
+            <Skeleton className="h-32 rounded-xl" />
+            <Skeleton className="h-32 rounded-xl" />
+            <Skeleton className="h-32 rounded-xl" />
+          </>
+        ) : (
+          <>
+            <KPICard 
+              title="Net AI Value" 
+              value={formatCurrency(netAIValue)} 
+              subtitle={`Mes ${metrics?.length || 3} - Tendencia al alza`}
+              icon={DollarSign} 
+              variant={netAIValue >= 0 ? 'success' : 'warning'} 
+              trend="up" 
+              trendValue="+15% vs M2" 
+            />
+            <KPICard 
+              title="Strategic Alignment" 
+              value={`${activationRate}%`} 
+              subtitle={`Meta M3: ≥${m3Benchmarks.activationRate.target}%`} 
+              icon={Target} 
+              variant="success" 
+              trend="up" 
+              trendValue="+8%" 
+            />
+            <KPICard 
+              title="ROI Acumulativo" 
+              value={`${cumulativeROI >= 0 ? '+' : ''}${cumulativeROI.toFixed(1)}%`} 
+              subtitle="Break-even estimado: M7" 
+              icon={TrendingUp} 
+              variant={cumulativeROI >= 0 ? 'success' : 'warning'} 
+              trend="up" 
+            />
+          </>
+        )}
       </div>
 
       {/* Strategic Distribution Row */}
@@ -87,11 +158,13 @@ export default function StakeholderView() {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <span className="text-muted-foreground">Proyectos alineados</span>
-              <span className="text-2xl font-bold text-primary">6/8</span>
+              <span className="text-2xl font-bold text-primary">
+                {projects?.filter(p => p.status === 'on-track').length || 0}/{projects?.length || 0}
+              </span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-muted-foreground">Score de alineación</span>
-              <span className="text-xl font-semibold text-success">75%</span>
+              <span className="text-xl font-semibold text-success">{deliveryRate}%</span>
             </div>
             <p className="text-sm text-muted-foreground">
               Los proyectos están mayormente alineados con los objetivos estratégicos de la organización.
@@ -140,156 +213,25 @@ export default function StakeholderView() {
         </div>
       </div>
 
-      <SmartAlert type="info" message="El Net AI Value es negativo pero la tendencia es positiva. Esto es esperado en Mes 3 de implementación." className="mb-6" />
+      <SmartAlert 
+        type={netAIValue >= 0 ? 'success' : 'info'} 
+        message={netAIValue >= 0 
+          ? `El Net AI Value es positivo. La implementación está generando valor.`
+          : `El Net AI Value es negativo (${formatCurrency(netAIValue)}) pero la tendencia es positiva. Esto es esperado en Mes ${metrics?.length || 3} de implementación.`
+        } 
+        className="mb-6" 
+      />
+      
       <div className="p-6 rounded-xl bg-card border border-border">
-        <h3 className="text-lg font-semibold mb-4">Tendencia de ROI (Curva J)</h3>
+        <h3 className="text-lg font-semibold mb-4">Tendencia de ROI Acumulativo (Curva J)</h3>
         <div className="h-[350px] w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={monthlyMetrics}>
-              <defs>
-                <linearGradient id="roiGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor={chartColors.primary} stopOpacity={0.4}/>
-                  <stop offset="95%" stopColor={chartColors.primary} stopOpacity={0}/>
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke={chartColors.grid} />
-              <XAxis 
-                dataKey="month" 
-                stroke={chartColors.axis} 
-                tick={{ fill: chartColors.axis, fontSize: 12 }}
-                interval={1}
-              />
-              <YAxis 
-                stroke={chartColors.axis} 
-                tick={{ fill: chartColors.axis }}
-                tickFormatter={(value) => `${value}%`}
-                domain={['auto', 'auto']}
-              />
-              <ReferenceLine y={0} stroke="#666" strokeDasharray="3 3" label={{ value: 'Break-even', fill: '#666', fontSize: 11, position: 'right' }} />
-              <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: chartColors.tooltipBg, 
-                  borderColor: chartColors.tooltipBorder, 
-                  color: '#fff',
-                  borderRadius: '8px'
-                }}
-                labelStyle={{ color: chartColors.axis }}
-                formatter={(value: number) => [`${Math.round(value)}%`, 'ROI']}
-              />
-              <Area 
-                type="monotone" 
-                dataKey="roi" 
-                stroke={chartColors.primary} 
-                strokeWidth={2}
-                fill="url(#roiGradient)"
-                dot={{ fill: chartColors.primary, strokeWidth: 2, r: 3 }}
-              />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-    </>
-  );
-
-  // CFO View - Full Cash Flow vs Amortized dual-view
-  const latestMetrics = cashFlowData[cashFlowData.length - 1];
-  const totalCashOutflow = cashFlowData.reduce((sum, d) => sum + d.cashOutflow, 0);
-  const totalValueRealized = cashFlowData.reduce((sum, d) => sum + d.valueRealized, 0);
-  
-  const renderCFOView = () => (
-    <>
-      {/* Financial KPIs Row */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <KPICard 
-          title="Inversión Total" 
-          value={`$${(financialSettings.totalInvestment / 1000).toFixed(0)}k`}
-          subtitle="100% Comprometido (M1)" 
-          icon={Wallet} 
-          variant="default" 
-        />
-        <KPICard 
-          title="Recuperado" 
-          value={`$${(totalValueRealized / 1000).toFixed(1)}k`}
-          subtitle={`${latestMetrics.cumulativePaybackPct}% del total`}
-          icon={PiggyBank} 
-          variant="warning" 
-          trend="up" 
-          trendValue={`+$${(latestMetrics.valueRealized / 1000).toFixed(1)}k M3`}
-        />
-        <KPICard 
-          title="ROI Operativo M3" 
-          value={`+${latestMetrics.monthlyRoi}%`}
-          subtitle="vs Costo Amortizado" 
-          icon={TrendingUp} 
-          variant="success" 
-        />
-        <KPICard 
-          title="Payback Proyectado" 
-          value="14 meses" 
-          subtitle="A tasa actual" 
-          icon={Clock} 
-          variant="default" 
-        />
-      </div>
-
-      <SmartAlert type="info" message="💡 La inversión de $250k se pagó upfront en Mes 1. El ROI operativo se calcula contra el costo amortizado mensual ($20,833)." className="mb-6" />
-
-      {/* Cash Flow vs Value + ROI Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        {/* Cash Flow Reality Chart */}
-        <div className="p-6 rounded-xl bg-card border border-border">
-          <h3 className="text-lg font-semibold mb-2">Flujo de Caja Real</h3>
-          <p className="text-sm text-muted-foreground mb-4">
-            Inversión upfront vs valor generado
-          </p>
-          <div className="h-[280px] w-full">
+          {loadingMetrics ? (
+            <Skeleton className="h-full w-full" />
+          ) : (
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={cashFlowData}>
-                <CartesianGrid strokeDasharray="3 3" stroke={chartColors.grid} />
-                <XAxis 
-                  dataKey="month" 
-                  stroke={chartColors.axis} 
-                  tick={{ fill: chartColors.axis, fontSize: 12 }}
-                />
-                <YAxis 
-                  stroke={chartColors.axis} 
-                  tick={{ fill: chartColors.axis }}
-                  tickFormatter={(value) => value >= 1000 ? `$${(value / 1000).toFixed(0)}k` : `$${value}`}
-                />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: chartColors.tooltipBg, 
-                    borderColor: chartColors.tooltipBorder, 
-                    color: '#fff',
-                    borderRadius: '8px'
-                  }}
-                  labelStyle={{ color: chartColors.axis }}
-                  formatter={(value: number, name: string) => [
-                    `$${value.toLocaleString()}`, 
-                    name === 'cashOutflow' ? 'Flujo de Caja' : 'Valor Generado'
-                  ]}
-                />
-                <Legend 
-                  formatter={(value) => value === 'cashOutflow' ? 'Flujo de Caja' : 'Valor Generado'}
-                />
-                <Bar dataKey="cashOutflow" fill="#EF4444" radius={[4, 4, 0, 0]} name="cashOutflow" />
-                <Bar dataKey="valueRealized" fill="#22C55E" radius={[4, 4, 0, 0]} name="valueRealized" />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* ROI Operativo Chart (Amortized View) */}
-        <div className="p-6 rounded-xl bg-card border border-border">
-          <h3 className="text-lg font-semibold mb-2">ROI Operativo</h3>
-          <p className="text-sm text-muted-foreground mb-4">
-            Calculado vs costo amortizado mensual ($20,833)
-          </p>
-          <div className="h-[280px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={roiTrendData}>
+              <AreaChart data={chartData}>
                 <defs>
-                  <linearGradient id="roiGradientCFO" x1="0" y1="0" x2="0" y2="1">
+                  <linearGradient id="roiGradient" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor={chartColors.primary} stopOpacity={0.4}/>
                     <stop offset="95%" stopColor={chartColors.primary} stopOpacity={0}/>
                   </linearGradient>
@@ -299,12 +241,13 @@ export default function StakeholderView() {
                   dataKey="month" 
                   stroke={chartColors.axis} 
                   tick={{ fill: chartColors.axis, fontSize: 12 }}
+                  interval={0}
                 />
                 <YAxis 
                   stroke={chartColors.axis} 
                   tick={{ fill: chartColors.axis }}
                   tickFormatter={(value) => `${value}%`}
-                  domain={[-100, 20]}
+                  domain={['auto', 'auto']}
                 />
                 <ReferenceLine y={0} stroke="#666" strokeDasharray="3 3" label={{ value: 'Break-even', fill: '#666', fontSize: 11, position: 'right' }} />
                 <Tooltip 
@@ -315,89 +258,298 @@ export default function StakeholderView() {
                     borderRadius: '8px'
                   }}
                   labelStyle={{ color: chartColors.axis }}
-                  formatter={(value: number) => [`${value}%`, 'ROI Operativo']}
+                  formatter={(value: number) => [`${Math.round(value)}%`, 'ROI Acumulativo']}
                 />
                 <Area 
                   type="monotone" 
                   dataKey="roi" 
                   stroke={chartColors.primary} 
                   strokeWidth={2}
-                  fill="url(#roiGradientCFO)"
-                  dot={{ fill: chartColors.primary, strokeWidth: 2, r: 4 }}
+                  fill="url(#roiGradient)"
+                  dot={{ fill: chartColors.primary, strokeWidth: 2, r: 3 }}
                 />
               </AreaChart>
             </ResponsiveContainer>
-          </div>
+          )}
         </div>
-      </div>
-
-      {/* Amortization Breakdown Table */}
-      <div className="p-6 rounded-xl bg-card border border-border">
-        <h3 className="text-lg font-semibold mb-4">Desglose de Amortización</h3>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Mes</TableHead>
-              <TableHead className="text-right">Flujo de Caja</TableHead>
-              <TableHead className="text-right">Costo Amortizado</TableHead>
-              <TableHead className="text-right">Valor Generado</TableHead>
-              <TableHead className="text-right">ROI Mensual</TableHead>
-              <TableHead className="text-right">Payback Acum.</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {cashFlowData.map((row, index) => (
-              <TableRow key={index}>
-                <TableCell className="font-medium">{row.month}</TableCell>
-                <TableCell className={`text-right ${row.cashOutflow > 0 ? 'text-destructive font-semibold' : 'text-muted-foreground'}`}>
-                  ${row.cashOutflow.toLocaleString()}
-                </TableCell>
-                <TableCell className="text-right text-muted-foreground">
-                  ${row.amortizedCost.toLocaleString()}
-                </TableCell>
-                <TableCell className="text-right text-success">
-                  ${row.valueRealized.toLocaleString()}
-                </TableCell>
-                <TableCell className={`text-right font-semibold ${row.monthlyRoi >= 0 ? 'text-success' : 'text-destructive'}`}>
-                  {row.monthlyRoi >= 0 ? '+' : ''}{row.monthlyRoi}%
-                </TableCell>
-                <TableCell className="text-right">
-                  {row.cumulativePaybackPct}%
-                </TableCell>
-              </TableRow>
-            ))}
-            {/* Totals Row */}
-            <TableRow className="border-t-2 border-border bg-muted/30">
-              <TableCell className="font-bold">Total</TableCell>
-              <TableCell className="text-right font-bold text-destructive">
-                ${totalCashOutflow.toLocaleString()}
-              </TableCell>
-              <TableCell className="text-right font-bold">
-                ${(cashFlowData.reduce((sum, d) => sum + d.amortizedCost, 0)).toLocaleString()}
-              </TableCell>
-              <TableCell className="text-right font-bold text-success">
-                ${totalValueRealized.toLocaleString()}
-              </TableCell>
-              <TableCell className="text-right font-bold text-success">
-                +{latestMetrics.monthlyRoi}%
-              </TableCell>
-              <TableCell className="text-right font-bold">
-                {latestMetrics.cumulativePaybackPct}%
-              </TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
       </div>
     </>
   );
+
+  // CFO View - Full Cash Flow vs Amortized dual-view
+  const renderCFOView = () => {
+    const investment = settings?.total_investment || 250000;
+    const monthlyAmortized = settings?.monthly_amortized || (investment / 12);
+    
+    // Calculate cumulative ROI for chart (showing the J-curve progression)
+    const cfoChartData = metrics?.map((m, index) => {
+      const cumulativeAmortized = (index + 1) * (m.amortized_cost || monthlyAmortized);
+      const cumulativeROI = cumulativeAmortized > 0 
+        ? ((m.cumulative_value || 0) - cumulativeAmortized) / cumulativeAmortized * 100
+        : 0;
+      return {
+        month: m.month_label,
+        roi: Math.round(cumulativeROI * 10) / 10,
+        cashOutflow: m.cash_outflow,
+        valueRealized: m.value_realized,
+        amortizedCost: m.amortized_cost,
+        cumulativePaybackPct: m.cumulative_payback_pct || 0,
+        monthlyRoi: m.monthly_roi,
+      };
+    }) || [];
+
+    return (
+      <>
+        {/* Financial KPIs Row */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          {isLoading ? (
+            <>
+              <Skeleton className="h-32 rounded-xl" />
+              <Skeleton className="h-32 rounded-xl" />
+              <Skeleton className="h-32 rounded-xl" />
+              <Skeleton className="h-32 rounded-xl" />
+            </>
+          ) : (
+            <>
+              <KPICard 
+                title="Inversión Total" 
+                value={formatCurrency(investment)}
+                subtitle="100% Comprometido (M1)" 
+                icon={Wallet} 
+                variant="default" 
+              />
+              <KPICard 
+                title="Recuperado" 
+                value={formatCurrency(totalValueRealized)}
+                subtitle={`${latestMetrics?.cumulative_payback_pct || 0}% del total`}
+                icon={PiggyBank} 
+                variant="warning" 
+                trend="up" 
+                trendValue={`+${formatCurrency(latestMetrics?.value_realized || 0)} M${metrics?.length || 3}`}
+              />
+              <KPICard 
+                title="ROI Acumulativo" 
+                value={`${cumulativeROI >= 0 ? '+' : ''}${cumulativeROI.toFixed(1)}%`}
+                subtitle="vs Inversión Amortizada" 
+                icon={TrendingUp} 
+                variant={cumulativeROI >= 0 ? 'success' : 'warning'} 
+              />
+              <KPICard 
+                title="Payback Proyectado" 
+                value="14 meses" 
+                subtitle="A tasa actual" 
+                icon={Clock} 
+                variant="default" 
+              />
+            </>
+          )}
+        </div>
+
+        <SmartAlert 
+          type="info" 
+          message={`💡 La inversión de ${formatCurrency(investment)} se pagó upfront en Mes 1. El ROI se calcula contra el costo amortizado acumulado (${formatCurrency(totalAmortizedCost)}).`} 
+          className="mb-6" 
+        />
+
+        {/* Cash Flow vs Value + ROI Charts Row */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          {/* Cash Flow Reality Chart */}
+          <div className="p-6 rounded-xl bg-card border border-border">
+            <h3 className="text-lg font-semibold mb-2">Flujo de Caja Real</h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              Inversión upfront vs valor generado
+            </p>
+            <div className="h-[280px] w-full">
+              {loadingMetrics ? (
+                <Skeleton className="h-full w-full" />
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={cfoChartData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke={chartColors.grid} />
+                    <XAxis 
+                      dataKey="month" 
+                      stroke={chartColors.axis} 
+                      tick={{ fill: chartColors.axis, fontSize: 12 }}
+                    />
+                    <YAxis 
+                      stroke={chartColors.axis} 
+                      tick={{ fill: chartColors.axis }}
+                      tickFormatter={(value) => value >= 1000 ? `$${(value / 1000).toFixed(0)}k` : `$${value}`}
+                    />
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: chartColors.tooltipBg, 
+                        borderColor: chartColors.tooltipBorder, 
+                        color: '#fff',
+                        borderRadius: '8px'
+                      }}
+                      labelStyle={{ color: chartColors.axis }}
+                      formatter={(value: number, name: string) => [
+                        `$${value.toLocaleString()}`, 
+                        name === 'cashOutflow' ? 'Flujo de Caja' : 'Valor Generado'
+                      ]}
+                    />
+                    <Legend 
+                      formatter={(value) => value === 'cashOutflow' ? 'Flujo de Caja' : 'Valor Generado'}
+                    />
+                    <Bar dataKey="cashOutflow" fill="#EF4444" radius={[4, 4, 0, 0]} name="cashOutflow" />
+                    <Bar dataKey="valueRealized" fill="#22C55E" radius={[4, 4, 0, 0]} name="valueRealized" />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </div>
+          </div>
+
+          {/* ROI Acumulativo Chart */}
+          <div className="p-6 rounded-xl bg-card border border-border">
+            <h3 className="text-lg font-semibold mb-2">ROI Acumulativo</h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              Calculado vs costo amortizado acumulado
+            </p>
+            <div className="h-[280px] w-full">
+              {loadingMetrics ? (
+                <Skeleton className="h-full w-full" />
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={cfoChartData}>
+                    <defs>
+                      <linearGradient id="roiGradientCFO" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor={chartColors.primary} stopOpacity={0.4}/>
+                        <stop offset="95%" stopColor={chartColors.primary} stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke={chartColors.grid} />
+                    <XAxis 
+                      dataKey="month" 
+                      stroke={chartColors.axis} 
+                      tick={{ fill: chartColors.axis, fontSize: 12 }}
+                    />
+                    <YAxis 
+                      stroke={chartColors.axis} 
+                      tick={{ fill: chartColors.axis }}
+                      tickFormatter={(value) => `${value}%`}
+                      domain={['auto', 'auto']}
+                    />
+                    <ReferenceLine y={0} stroke="#666" strokeDasharray="3 3" label={{ value: 'Break-even', fill: '#666', fontSize: 11, position: 'right' }} />
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: chartColors.tooltipBg, 
+                        borderColor: chartColors.tooltipBorder, 
+                        color: '#fff',
+                        borderRadius: '8px'
+                      }}
+                      labelStyle={{ color: chartColors.axis }}
+                      formatter={(value: number) => [`${value}%`, 'ROI Acumulativo']}
+                    />
+                    <Area 
+                      type="monotone" 
+                      dataKey="roi" 
+                      stroke={chartColors.primary} 
+                      strokeWidth={2}
+                      fill="url(#roiGradientCFO)"
+                      dot={{ fill: chartColors.primary, strokeWidth: 2, r: 4 }}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Amortization Breakdown Table */}
+        <div className="p-6 rounded-xl bg-card border border-border">
+          <h3 className="text-lg font-semibold mb-4">Desglose de Amortización</h3>
+          {loadingMetrics ? (
+            <div className="space-y-3">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <Skeleton key={i} className="h-12 w-full" />
+              ))}
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Mes</TableHead>
+                  <TableHead className="text-right">Flujo de Caja</TableHead>
+                  <TableHead className="text-right">Costo Amortizado</TableHead>
+                  <TableHead className="text-right">Valor Generado</TableHead>
+                  <TableHead className="text-right">ROI Mensual</TableHead>
+                  <TableHead className="text-right">Payback Acum.</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {cfoChartData.map((row, index) => (
+                  <TableRow key={index}>
+                    <TableCell className="font-medium">{row.month}</TableCell>
+                    <TableCell className={`text-right ${row.cashOutflow > 0 ? 'text-destructive font-semibold' : 'text-muted-foreground'}`}>
+                      ${row.cashOutflow.toLocaleString()}
+                    </TableCell>
+                    <TableCell className="text-right text-muted-foreground">
+                      ${Math.round(row.amortizedCost).toLocaleString()}
+                    </TableCell>
+                    <TableCell className="text-right text-success">
+                      ${row.valueRealized.toLocaleString()}
+                    </TableCell>
+                    <TableCell className={`text-right font-semibold ${row.monthlyRoi >= 0 ? 'text-success' : 'text-destructive'}`}>
+                      {row.monthlyRoi >= 0 ? '+' : ''}{row.monthlyRoi}%
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {row.cumulativePaybackPct}%
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {/* Totals Row */}
+                <TableRow className="border-t-2 border-border bg-muted/30">
+                  <TableCell className="font-bold">Total</TableCell>
+                  <TableCell className="text-right font-bold text-destructive">
+                    ${totalCashOutflow.toLocaleString()}
+                  </TableCell>
+                  <TableCell className="text-right font-bold">
+                    ${Math.round(totalAmortizedCost).toLocaleString()}
+                  </TableCell>
+                  <TableCell className="text-right font-bold text-success">
+                    ${Math.round(totalValueRealized).toLocaleString()}
+                  </TableCell>
+                  <TableCell className={`text-right font-bold ${cumulativeROI >= 0 ? 'text-success' : 'text-destructive'}`}>
+                    {cumulativeROI >= 0 ? '+' : ''}{cumulativeROI.toFixed(1)}%
+                  </TableCell>
+                  <TableCell className="text-right font-bold">
+                    {latestMetrics?.cumulative_payback_pct || 0}%
+                  </TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
+          )}
+        </div>
+      </>
+    );
+  };
 
   const renderCTOView = () => (
     <>
       {/* KPIs Row 1 - Operations */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-        <KPICard title="Delivery Rate" value="52%" subtitle={`Meta M3: ≥${m3Benchmarks.deliveryRate.target}%`} icon={Cpu} variant="success" trend="up" trendValue="+12%" />
-        <KPICard title="Security Score" value="92/100" subtitle="3 Shadow AI tools blocked" icon={ShieldCheck} variant="success" />
-        <KPICard title="Workflows Producción" value="24" subtitle="n8n activos" icon={Target} variant="default" trend="up" trendValue="+6" />
+        {isLoading ? (
+          <>
+            <Skeleton className="h-32 rounded-xl" />
+            <Skeleton className="h-32 rounded-xl" />
+            <Skeleton className="h-32 rounded-xl" />
+          </>
+        ) : (
+          <>
+            <KPICard 
+              title="Delivery Rate" 
+              value={`${deliveryRate}%`} 
+              subtitle={`Meta M3: ≥${m3Benchmarks.deliveryRate.target}%`} 
+              icon={Cpu} 
+              variant="success" 
+              trend="up" 
+              trendValue="+12%" 
+            />
+            <KPICard title="Security Score" value="92/100" subtitle="3 Shadow AI tools blocked" icon={ShieldCheck} variant="success" />
+            <KPICard title="Workflows Producción" value="24" subtitle="n8n activos" icon={Target} variant="default" trend="up" trendValue="+6" />
+          </>
+        )}
       </div>
 
       {/* KPIs Row 2 - Infrastructure Costs */}
@@ -498,22 +650,28 @@ export default function StakeholderView() {
               </div>
             ))}
           </div>
-          <div className="mt-4 pt-4 border-t border-border flex justify-between items-center">
-            <span className="text-muted-foreground">Total AWS</span>
-            <span className="text-xl font-bold">${cloudInfrastructure.totalCost.toLocaleString()}</span>
-          </div>
         </div>
       </div>
 
-      {/* Cost Trend Chart */}
+      {/* Infrastructure Cost Trend */}
       <div className="p-6 rounded-xl bg-card border border-border">
-        <h3 className="text-lg font-semibold mb-4">Tendencia de Costos (API + Cloud)</h3>
+        <h3 className="text-lg font-semibold mb-4">Tendencia de Costos de Infraestructura</h3>
         <div className="h-[300px] w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={infrastructureTrend}>
+            <AreaChart data={infrastructureTrend}>
+              <defs>
+                <linearGradient id="apiGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor={chartColors.primary} stopOpacity={0.4}/>
+                  <stop offset="95%" stopColor={chartColors.primary} stopOpacity={0}/>
+                </linearGradient>
+                <linearGradient id="infraGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor={chartColors.secondary} stopOpacity={0.4}/>
+                  <stop offset="95%" stopColor={chartColors.secondary} stopOpacity={0}/>
+                </linearGradient>
+              </defs>
               <CartesianGrid strokeDasharray="3 3" stroke={chartColors.grid} />
               <XAxis dataKey="month" stroke={chartColors.axis} tick={{ fill: chartColors.axis }} />
-              <YAxis stroke={chartColors.axis} tick={{ fill: chartColors.axis }} tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`} />
+              <YAxis stroke={chartColors.axis} tick={{ fill: chartColors.axis }} tickFormatter={(v) => `$${v/1000}k`} />
               <Tooltip 
                 contentStyle={{ 
                   backgroundColor: chartColors.tooltipBg, 
@@ -521,68 +679,102 @@ export default function StakeholderView() {
                   color: '#fff',
                   borderRadius: '8px'
                 }}
-                formatter={(value: number, name: string) => [`$${value.toLocaleString()}`, name === 'api' ? 'APIs' : 'Cloud']}
+                formatter={(value: number) => [`$${value.toLocaleString()}`, '']}
               />
-              <Legend formatter={(value) => value === 'api' ? 'APIs' : 'Cloud Infrastructure'} />
-              <Bar dataKey="api" stackId="a" fill={chartColors.primary} radius={[0, 0, 0, 0]} />
-              <Bar dataKey="cloud" stackId="a" fill={chartColors.secondary} radius={[4, 4, 0, 0]} />
-            </BarChart>
+              <Legend />
+              <Area type="monotone" dataKey="apiCost" name="API Cost" stroke={chartColors.primary} fill="url(#apiGradient)" />
+              <Area type="monotone" dataKey="infraCost" name="Infra Cost" stroke={chartColors.secondary} fill="url(#infraGradient)" />
+            </AreaChart>
           </ResponsiveContainer>
         </div>
       </div>
     </>
   );
 
-  // Fixed Activation Rate for AI Lead (42% > 35% target = success)
-  const fixedActivationRate = 42;
-  const activationTarget = 35;
-
-  // Total tokens consumed
-  const totalTokens = apiConsumption.reduce((sum, api) => sum + api.usage, 0);
-  const costPerUser = totalAPICost / totalEmployees;
+  // AI Lead specific calculations
+  const totalTokens = apiConsumption.reduce((sum, a) => sum + a.usage, 0);
+  const costPerUser = activeUsers > 0 ? totalAPICost / activeUsers : 0;
+  const activationTarget = m3Benchmarks.activationRate.target;
+  const fixedActivationRate = activationRate;
 
   const renderAILeadView = () => (
     <>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <KPICard title="AI MAU" value={`${((activeUsers / totalEmployees) * 100).toFixed(0)}%`} subtitle={`${activeUsers} de ${totalEmployees} usuarios`} icon={Brain} variant="success" />
-        <KPICard 
-          title="Activation Rate" 
-          value={<span className="text-success">{fixedActivationRate}%</span>}
-          subtitle="Training completado / Total empleados"
-          icon={Users} 
-          variant="success" 
-          trend="up" 
-          trendValue="+8%"
-        >
-          <Badge className="mt-2 bg-success/20 text-success border-success/30 text-xs">
-            Target M3: {activationTarget}% - Superado ✓
-          </Badge>
-        </KPICard>
-        <KPICard title="Power Users" value={`${((powerUsers / totalEmployees) * 100).toFixed(1)}%`} subtitle={`${powerUsers} usuarios avanzados`} icon={Zap} variant={powerUsers / totalEmployees >= 0.04 ? 'success' : 'warning'} />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        {isLoading ? (
+          <>
+            <Skeleton className="h-32 rounded-xl" />
+            <Skeleton className="h-32 rounded-xl" />
+            <Skeleton className="h-32 rounded-xl" />
+          </>
+        ) : (
+          <>
+            <KPICard 
+              title="MAU Rate" 
+              value={`${Math.round(activationRate * 0.85)}%`} 
+              subtitle={`${activeUsers} usuarios activos`} 
+              icon={Brain} 
+              variant="success" 
+              trend="up" 
+              trendValue="+5%"
+            />
+            <KPICard 
+              title="Activation Rate" 
+              value={<span className="text-success">{fixedActivationRate}%</span>}
+              subtitle="Training completado / Total empleados"
+              icon={Users} 
+              variant="success" 
+              trend="up" 
+              trendValue="+8%"
+            >
+              <Badge className="mt-2 bg-success/20 text-success border-success/30 text-xs">
+                Target M3: {activationTarget}% - {fixedActivationRate >= activationTarget ? 'Superado ✓' : 'En progreso'}
+              </Badge>
+            </KPICard>
+            <KPICard 
+              title="Power Users" 
+              value={`${((powerUsers / totalEmployees) * 100).toFixed(1)}%`} 
+              subtitle={`${powerUsers} usuarios avanzados`} 
+              icon={Zap} 
+              variant={powerUsers / totalEmployees >= 0.04 ? 'success' : 'warning'} 
+            />
+          </>
+        )}
       </div>
-      <SmartAlert type="warning" message="⚠️ Equipos Legal y HR por debajo del umbral de activación. Considerar training adicional." className="mb-6" />
+
+      {departmentStats && departmentStats.some(d => d.status === 'critical') && (
+        <SmartAlert 
+          type="warning" 
+          message={`⚠️ Equipos ${departmentStats.filter(d => d.status === 'critical').map(d => d.name).join(' y ')} por debajo del umbral de activación. Considerar training adicional.`} 
+          className="mb-6" 
+        />
+      )}
       
       {/* Adoption by Department Chart */}
       <div className="p-6 rounded-xl bg-card border border-border mb-6">
         <h3 className="text-lg font-semibold mb-4">Adopción por Departamento</h3>
         <div className="h-[300px] w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={departmentStats} layout="vertical">
-              <CartesianGrid strokeDasharray="3 3" stroke={chartColors.grid} />
-              <XAxis type="number" domain={[0, 100]} stroke={chartColors.axis} tick={{ fill: chartColors.axis }} />
-              <YAxis dataKey="name" type="category" stroke={chartColors.axis} tick={{ fill: chartColors.axis }} width={100} />
-              <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: chartColors.tooltipBg, 
-                  borderColor: chartColors.tooltipBorder, 
-                  color: '#fff',
-                  borderRadius: '8px'
-                }}
-                labelStyle={{ color: chartColors.axis }}
-              />
-              <Bar dataKey="activationRate" fill={chartColors.primary} radius={[0, 4, 4, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+          {loadingDepts ? (
+            <Skeleton className="h-full w-full" />
+          ) : (
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={departmentStats} layout="vertical">
+                <CartesianGrid strokeDasharray="3 3" stroke={chartColors.grid} />
+                <XAxis type="number" domain={[0, 100]} stroke={chartColors.axis} tick={{ fill: chartColors.axis }} tickFormatter={(v) => `${v}%`} />
+                <YAxis dataKey="name" type="category" stroke={chartColors.axis} tick={{ fill: chartColors.axis }} width={100} />
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: chartColors.tooltipBg, 
+                    borderColor: chartColors.tooltipBorder, 
+                    color: '#fff',
+                    borderRadius: '8px'
+                  }}
+                  labelStyle={{ color: chartColors.axis }}
+                  formatter={(value: number) => [`${value.toFixed(1)}%`, 'Activación']}
+                />
+                <Bar dataKey="activationRate" fill={chartColors.primary} radius={[0, 4, 4, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
         </div>
       </div>
 
