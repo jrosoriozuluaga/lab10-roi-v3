@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Calculator, DollarSign, TrendingUp, Clock, Info, Lightbulb, Scale, Activity } from 'lucide-react';
 import { DashboardLayout } from '@/components/DashboardLayout';
 import { KPICard } from '@/components/KPICard';
@@ -9,10 +9,12 @@ import { Slider } from '@/components/ui/slider';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { defaultROIInputs } from '@/lib/mockData';
+import { useROISettings } from '@/hooks/useROIData';
+import { settingsToInputs, calculateROI, type ROIInputs } from '@/lib/roiCalculations';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip as RechartsTooltip, BarChart, Bar, XAxis, YAxis, ReferenceLine } from 'recharts';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface InputWithTipProps {
   label: string;
@@ -138,13 +140,46 @@ const scenarioPresets = {
   }
 } as const;
 
+// Default inputs for initial load (will be replaced by DB settings)
+const defaultInputs: ROIInputs = {
+  numberOfUsers: 292,
+  efficiencyFactor: 0.55,
+  attributionFactor: 0.30,
+  avgHourlyRate: 45,
+  avgHourlyCost: 35,
+  hoursSavedPerWeek: 2.5,
+  learningCurvePenalty: 0.20,
+  monthlyLicenses: 8500,
+  implementationCost: 15000,
+  trainingBudget: 12000,
+  learningCurveHours: 20,
+  monthlyRevenueUplift: 25000,
+  licenseSavings: 2000,
+  outsourcingReduction: 3500,
+  downtimeReduction: 1500,
+  complianceSavings: 800,
+  fraudPrevention: 500,
+  reworkReduction: 1200,
+};
+
 export default function ROICalculator() {
-  const [inputs, setInputs] = useState(defaultROIInputs);
+  const { data: roiSettings, isLoading: loadingSettings } = useROISettings();
+  const [inputs, setInputs] = useState<ROIInputs>(defaultInputs);
   const [activeScenario, setActiveScenario] = useState<ScenarioType>(null);
   const [comparisonOpen, setComparisonOpen] = useState(false);
   const [activeInput, setActiveInput] = useState<string | null>(null);
+  const [initialized, setInitialized] = useState(false);
 
-  const updateInput = (key: keyof typeof inputs, value: number) => {
+  // Initialize inputs from database settings
+  useEffect(() => {
+    if (roiSettings && !initialized) {
+      setInputs(settingsToInputs(roiSettings, 292)); // Use 292 as default active users
+      setInitialized(true);
+      toast.success('Parámetros cargados desde la metodología unificada');
+    }
+  }, [roiSettings, initialized]);
+
+  const updateInput = (key: keyof ROIInputs, value: number) => {
     setInputs((prev) => ({ ...prev, [key]: value }));
     // Clear scenario if user manually changes a controlled input
     if (['efficiencyFactor', 'hoursSavedPerWeek', 'attributionFactor'].includes(key)) {
@@ -182,38 +217,26 @@ export default function ROICalculator() {
     });
   };
 
-  // Calculate Hidden Cost (Learning Curve)
-  const hiddenCost = inputs.numberOfUsers * inputs.learningCurveHours * inputs.avgHourlyCost * 0.20;
+  // Use unified calculation function
+  const roiResult = calculateROI(inputs);
   
-  // Total Costs
-  const totalMonthlyCosts = inputs.monthlyLicenses + (hiddenCost / 12);
-  const totalOneTimeCosts = inputs.implementationCost + inputs.trainingBudget;
-  const annualizedCosts = (totalMonthlyCosts * 12) + totalOneTimeCosts;
-
-  // Hard Savings (with efficiency factor)
-  const grossFTESavings = inputs.numberOfUsers * inputs.hoursSavedPerWeek * 52 * inputs.avgHourlyRate;
-  const netFTESavings = grossFTESavings * inputs.efficiencyFactor;
-  const totalHardSavings = netFTESavings + (inputs.licenseSavings * 12) + (inputs.outsourcingReduction * 12);
-
-  // Hard Revenue (with attribution factor)
-  const grossRevenue = inputs.monthlyRevenueUplift * 12;
-  const netRevenue = grossRevenue * inputs.attributionFactor;
-
-  // Cost Avoidance
-  const totalCostAvoidance = (inputs.downtimeReduction + inputs.complianceSavings + inputs.fraudPrevention + inputs.reworkReduction) * 12;
-
-  // Total Benefits
-  const totalBenefits = totalHardSavings + netRevenue + totalCostAvoidance;
-
-  // Net AI Value
-  const netAIValue = totalBenefits - annualizedCosts;
-
-  // ROI %
-  const roi = annualizedCosts > 0 ? ((netAIValue / annualizedCosts) * 100) : 0;
-
-  // Payback Period (months)
-  const monthlyBenefit = totalBenefits / 12;
-  const paybackMonths = monthlyBenefit > 0 ? Math.ceil(annualizedCosts / monthlyBenefit) : Infinity;
+  // Destructure for easy access (maintaining backwards compatibility with rest of component)
+  const {
+    hiddenCost,
+    totalMonthlyCosts,
+    totalOneTimeCosts,
+    annualizedCosts,
+    grossFTESavings,
+    netFTESavings,
+    totalHardSavings,
+    grossRevenue,
+    netRevenue,
+    totalCostAvoidance,
+    totalBenefits,
+    netAIValue,
+    roi,
+    paybackMonths,
+  } = roiResult;
 
   // Chart data
   const benefitsData = [
@@ -731,7 +754,12 @@ export default function ROICalculator() {
             variant="outline"
             className="w-full"
             onClick={() => {
-              setInputs(defaultROIInputs);
+              if (roiSettings) {
+                setInputs(settingsToInputs(roiSettings, inputs.numberOfUsers));
+                toast.info('Valores restablecidos desde metodología unificada');
+              } else {
+                setInputs(defaultInputs);
+              }
               setActiveScenario(null);
             }}
           >

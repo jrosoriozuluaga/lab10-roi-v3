@@ -173,6 +173,168 @@ export type Database = {
         }
         Relationships: []
       }
+      roi_calculations: {
+        Row: {
+          active_users: number
+          attribution_factor_used: number
+          compliance_savings: number
+          created_at: string | null
+          cumulative_costs: number
+          cumulative_net_value: number
+          cumulative_roi: number
+          downtime_reduction: number
+          efficiency_factor_used: number
+          fraud_prevention: number
+          gross_fte_savings: number
+          gross_revenue: number
+          hidden_costs: number
+          id: string
+          license_savings: number
+          month_index: number
+          month_label: string
+          monthly_costs: number
+          monthly_roi: number
+          net_ai_value: number
+          net_fte_savings: number
+          net_revenue: number
+          outsourcing_reduction: number
+          rework_reduction: number
+          total_benefits: number
+          total_cost_avoidance: number
+          total_costs: number
+          total_hard_savings: number
+        }
+        Insert: {
+          active_users?: number
+          attribution_factor_used?: number
+          compliance_savings?: number
+          created_at?: string | null
+          cumulative_costs?: number
+          cumulative_net_value?: number
+          cumulative_roi?: number
+          downtime_reduction?: number
+          efficiency_factor_used?: number
+          fraud_prevention?: number
+          gross_fte_savings?: number
+          gross_revenue?: number
+          hidden_costs?: number
+          id?: string
+          license_savings?: number
+          month_index: number
+          month_label: string
+          monthly_costs?: number
+          monthly_roi?: number
+          net_ai_value?: number
+          net_fte_savings?: number
+          net_revenue?: number
+          outsourcing_reduction?: number
+          rework_reduction?: number
+          total_benefits?: number
+          total_cost_avoidance?: number
+          total_costs?: number
+          total_hard_savings?: number
+        }
+        Update: {
+          active_users?: number
+          attribution_factor_used?: number
+          compliance_savings?: number
+          created_at?: string | null
+          cumulative_costs?: number
+          cumulative_net_value?: number
+          cumulative_roi?: number
+          downtime_reduction?: number
+          efficiency_factor_used?: number
+          fraud_prevention?: number
+          gross_fte_savings?: number
+          gross_revenue?: number
+          hidden_costs?: number
+          id?: string
+          license_savings?: number
+          month_index?: number
+          month_label?: string
+          monthly_costs?: number
+          monthly_roi?: number
+          net_ai_value?: number
+          net_fte_savings?: number
+          net_revenue?: number
+          outsourcing_reduction?: number
+          rework_reduction?: number
+          total_benefits?: number
+          total_cost_avoidance?: number
+          total_costs?: number
+          total_hard_savings?: number
+        }
+        Relationships: []
+      }
+      roi_settings: {
+        Row: {
+          attribution_factor: number
+          avg_hourly_cost: number
+          avg_hourly_rate: number
+          compliance_savings: number
+          created_at: string | null
+          downtime_reduction: number
+          efficiency_factor: number
+          fraud_prevention: number
+          hours_saved_per_user_week: number
+          id: string
+          implementation_cost: number
+          learning_curve_hours: number
+          learning_curve_penalty: number
+          license_savings: number
+          monthly_licenses: number
+          monthly_revenue_uplift: number
+          outsourcing_reduction: number
+          rework_reduction: number
+          training_budget: number
+          updated_at: string | null
+        }
+        Insert: {
+          attribution_factor?: number
+          avg_hourly_cost?: number
+          avg_hourly_rate?: number
+          compliance_savings?: number
+          created_at?: string | null
+          downtime_reduction?: number
+          efficiency_factor?: number
+          fraud_prevention?: number
+          hours_saved_per_user_week?: number
+          id?: string
+          implementation_cost?: number
+          learning_curve_hours?: number
+          learning_curve_penalty?: number
+          license_savings?: number
+          monthly_licenses?: number
+          monthly_revenue_uplift?: number
+          outsourcing_reduction?: number
+          rework_reduction?: number
+          training_budget?: number
+          updated_at?: string | null
+        }
+        Update: {
+          attribution_factor?: number
+          avg_hourly_cost?: number
+          avg_hourly_rate?: number
+          compliance_savings?: number
+          created_at?: string | null
+          downtime_reduction?: number
+          efficiency_factor?: number
+          fraud_prevention?: number
+          hours_saved_per_user_week?: number
+          id?: string
+          implementation_cost?: number
+          learning_curve_hours?: number
+          learning_curve_penalty?: number
+          license_savings?: number
+          monthly_licenses?: number
+          monthly_revenue_uplift?: number
+          outsourcing_reduction?: number
+          rework_reduction?: number
+          training_budget?: number
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
