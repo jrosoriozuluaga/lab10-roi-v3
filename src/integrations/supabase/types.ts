@@ -14,7 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      projects: {
+        Row: {
+          created_at: string | null
+          id: string
+          impact_level: string
+          name: string
+          north_star: string
+          owner: string
+          roi_percent: number | null
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          impact_level?: string
+          name: string
+          north_star: string
+          owner: string
+          roi_percent?: number | null
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          impact_level?: string
+          name?: string
+          north_star?: string
+          owner?: string
+          roi_percent?: number | null
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
