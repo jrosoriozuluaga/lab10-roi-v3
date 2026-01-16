@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { DashboardLayout } from '@/components/DashboardLayout';
 import { KPICard } from '@/components/KPICard';
 import { DollarSign, Users, TrendingUp, Cpu, Download, Info } from 'lucide-react';
+import { Tooltip as UITooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useSummaryMetrics } from '@/hooks/useMetrics';
 import { useUnifiedROIMetrics } from '@/hooks/useROIData';
 import { transformCalculationsForCharts, formatCurrency as formatCurrencyUtil } from '@/lib/roiCalculations';
@@ -47,7 +48,20 @@ export default function Dashboard() {
         <div>
           <h1 className="text-3xl font-bold text-foreground">General AI Overview</h1>
           <p className="text-muted-foreground">
-            Mes {roiData?.currentMonth || 3} de implementación • {summary?.totalEmployees || 512} empleados • η={roiData?.efficiencyFactor?.toFixed(2) || '0.55'} α={roiData?.attributionFactor?.toFixed(2) || '0.30'}
+            Mes {roiData?.currentMonth || 3} de implementación • {summary?.totalEmployees || 512} empleados • 
+            <UITooltip>
+              <TooltipTrigger className="underline decoration-dotted cursor-help">η={roiData?.efficiencyFactor?.toFixed(2) || '0.55'}</TooltipTrigger>
+              <TooltipContent className="max-w-xs bg-neutral-900 text-white border-neutral-700">
+                <p className="text-sm"><strong>η (Eta) - Factor de Eficiencia:</strong> Porcentaje del tiempo ahorrado que se traduce en productividad real. Rango: 0.45-0.90</p>
+              </TooltipContent>
+            </UITooltip>
+            {' '}
+            <UITooltip>
+              <TooltipTrigger className="underline decoration-dotted cursor-help">α={roiData?.attributionFactor?.toFixed(2) || '0.30'}</TooltipTrigger>
+              <TooltipContent className="max-w-xs bg-neutral-900 text-white border-neutral-700">
+                <p className="text-sm"><strong>α (Alpha) - Factor de Atribución:</strong> Porcentaje de las ganancias atribuibles directamente a la IA. Rango: 0.20-0.50</p>
+              </TooltipContent>
+            </UITooltip>
           </p>
         </div>
         <div className="flex items-center gap-3">
