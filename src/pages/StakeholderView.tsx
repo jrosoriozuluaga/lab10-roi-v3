@@ -3,7 +3,7 @@ import { DashboardLayout } from '@/components/DashboardLayout';
 import { KPICard } from '@/components/KPICard';
 import { SmartAlert } from '@/components/SmartAlert';
 import { useRole, Role } from '@/contexts/RoleContext';
-import { DollarSign, Users, TrendingUp, Clock, Target, Cpu, Brain, Zap, ChevronDown, Cloud, Server, TrendingDown, Minus } from 'lucide-react';
+import { DollarSign, Users, TrendingUp, Clock, Target, Cpu, Brain, Zap, ChevronDown, Cloud, Server, TrendingDown, Minus, ShieldCheck } from 'lucide-react';
 import { 
   departmentStats, 
   monthlyMetrics, 
@@ -237,7 +237,7 @@ export default function StakeholderView() {
       {/* KPIs Row 1 - Operations */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
         <KPICard title="Delivery Rate" value="52%" subtitle={`Meta M3: ≥${m3Benchmarks.deliveryRate.target}%`} icon={Cpu} variant="success" trend="up" trendValue="+12%" />
-        <KPICard title="Error Rate" value="2.1%" subtitle="Objetivo: <3%" icon={Zap} variant="success" />
+        <KPICard title="Security Score" value="92/100" subtitle="3 Shadow AI tools blocked" icon={ShieldCheck} variant="success" />
         <KPICard title="Workflows Producción" value="24" subtitle="n8n activos" icon={Target} variant="default" trend="up" trendValue="+6" />
       </div>
 

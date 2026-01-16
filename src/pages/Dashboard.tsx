@@ -158,39 +158,37 @@ export default function Dashboard() {
           </DialogHeader>
           
           <div className="space-y-6 mt-4">
-            {/* Formula */}
-            <div className="p-4 rounded-lg bg-muted/50 border border-border">
-              <p className="text-sm font-medium text-muted-foreground mb-2">Fórmula</p>
-              <code className="block text-sm font-mono text-primary leading-relaxed">
-                ROI = [(Hard Savings + Soft Savings + Revenue Impact × α) × η − Total Costs] / Total Costs
-              </code>
+            {/* Fórmula de Valor Neto */}
+            <div>
+              <h3 className="text-sm font-semibold text-foreground mb-2">Fórmula de Valor Neto</h3>
+              <div className="p-4 rounded-lg bg-muted/50 border border-border">
+                <code className="block text-sm font-mono text-primary leading-relaxed">
+                  (Ahorros FTE × η) + (Revenue × α) − Costos Totales
+                </code>
+              </div>
             </div>
 
-            {/* Definitions */}
-            <div className="space-y-4">
-              <div>
-                <h4 className="text-sm font-semibold text-foreground mb-1">
-                  Efficiency Factor (η)
-                </h4>
-                <p className="text-sm text-muted-foreground mb-2">
-                  Factor de ajuste (0.7–0.9) que refleja la madurez de implementación:
-                </p>
-                <div className="flex gap-4 text-xs text-muted-foreground">
-                  <span className="px-2 py-1 rounded bg-muted">Mes 1–3: <span className="text-foreground font-medium">0.7</span></span>
-                  <span className="px-2 py-1 rounded bg-muted">Mes 4–6: <span className="text-foreground font-medium">0.8</span></span>
-                  <span className="px-2 py-1 rounded bg-muted">Mes 7+: <span className="text-foreground font-medium">0.9</span></span>
-                </div>
+            {/* Factor de Eficiencia */}
+            <div>
+              <h3 className="text-sm font-semibold text-foreground mb-2">Factor de Eficiencia (η)</h3>
+              <p className="text-sm text-muted-foreground mb-3">
+                Ajuste conservador que descuenta tiempos muertos y revisiones humanas. 
+                Default: 60% para Mes 3.
+              </p>
+              <div className="flex gap-4 text-xs text-muted-foreground">
+                <span className="px-2 py-1 rounded bg-muted">Mes 1–3: <span className="text-foreground font-medium">0.5–0.6</span></span>
+                <span className="px-2 py-1 rounded bg-muted">Mes 4–6: <span className="text-foreground font-medium">0.7–0.8</span></span>
+                <span className="px-2 py-1 rounded bg-muted">Mes 7+: <span className="text-foreground font-medium">0.85–0.9</span></span>
               </div>
+            </div>
 
-              <div>
-                <h4 className="text-sm font-semibold text-foreground mb-1">
-                  Revenue Attribution (α)
-                </h4>
-                <p className="text-sm text-muted-foreground">
-                  Porcentaje del incremento de ingresos atribuible directamente a iniciativas de AI. 
-                  Calculado mediante análisis de correlación con métricas de adopción.
-                </p>
-              </div>
+            {/* Costos Ocultos */}
+            <div>
+              <h3 className="text-sm font-semibold text-foreground mb-2">Costos Ocultos</h3>
+              <p className="text-sm text-muted-foreground">
+                Incluye curva de aprendizaje (20% pérdida productividad en M1), tiempo de revisión 
+                de outputs AI, y overhead de integración con flujos existentes.
+              </p>
             </div>
 
             {/* Why Section */}
