@@ -3,7 +3,7 @@ import { DashboardLayout } from '@/components/DashboardLayout';
 import { KPICard } from '@/components/KPICard';
 import { SmartAlert } from '@/components/SmartAlert';
 import { useRole, Role } from '@/contexts/RoleContext';
-import { DollarSign, Users, TrendingUp, Clock, Target, Cpu, Brain, Zap, ChevronDown, Cloud, Server, TrendingDown, Minus, ShieldCheck, Wallet, PiggyBank } from 'lucide-react';
+import { DollarSign, Users, TrendingUp, Clock, Target, Cpu, Brain, Zap, ChevronDown, Cloud, Server, TrendingDown, Minus, ShieldCheck, Wallet, PiggyBank, CheckCircle, AlertTriangle, Lightbulb, ArrowRight, FolderKanban } from 'lucide-react';
 import { 
   useSummaryMetrics, 
   useMonthlyMetrics, 
@@ -21,7 +21,10 @@ import {
   totalAPICost,
   totalInfraCost,
   budgetUtilization,
+  generateAlerts,
 } from '@/lib/mockData';
+import { Link } from 'react-router-dom';
+import { useEmployees } from '@/hooks/useMetrics';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, ReferenceLine, PieChart, Pie, Cell, Legend } from 'recharts';
 import {
   Table,
@@ -697,11 +700,27 @@ export default function StakeholderView() {
   const activationTarget = m3Benchmarks.activationRate.target;
   const fixedActivationRate = activationRate;
 
+  // AI Lead specific data
+  const mauRate = latestMetrics?.mau_rate || Math.round(activationRate * 0.85);
+  const powerUsersPercentage = totalEmployees > 0 ? ((powerUsers / totalEmployees) * 100).toFixed(1) : '0';
+  const aiLeadAlerts = generateAlerts().filter(a => 
+    a.severity === 'warning' || a.severity === 'critical' || a.department
+  ).slice(0, 4);
+  
+  // Get top power users from employees
+  const { data: employeesData } = useEmployees();
+  const topPowerUsers = employeesData
+    ?.filter(e => e.usage_level === 'power')
+    .sort((a, b) => (b.weekly_ai_hours || 0) - (a.weekly_ai_hours || 0))
+    .slice(0, 5) || [];
+
   const renderAILeadView = () => (
     <>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+      {/* 4 Main KPIs */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
         {isLoading ? (
           <>
+            <Skeleton className="h-32 rounded-xl" />
             <Skeleton className="h-32 rounded-xl" />
             <Skeleton className="h-32 rounded-xl" />
             <Skeleton className="h-32 rounded-xl" />
@@ -709,16 +728,7 @@ export default function StakeholderView() {
         ) : (
           <>
             <KPICard 
-              title="MAU Rate" 
-              value={`${Math.round(activationRate * 0.85)}%`} 
-              subtitle={`${activeUsers} usuarios activos`} 
-              icon={Brain} 
-              variant="success" 
-              trend="up" 
-              trendValue="+5%"
-            />
-            <KPICard 
-              title="Activation Rate" 
+              title="AI Activation Rate" 
               value={<span className="text-success">{fixedActivationRate}%</span>}
               subtitle="Training completado / Total empleados"
               icon={Users} 
@@ -731,11 +741,30 @@ export default function StakeholderView() {
               </Badge>
             </KPICard>
             <KPICard 
+              title="AI MAU" 
+              value={`${mauRate}%`} 
+              subtitle={`${activeUsers} usuarios activos (30d)`} 
+              icon={Brain} 
+              variant="success" 
+              trend="up" 
+              trendValue="+5%"
+            />
+            <KPICard 
               title="Power Users" 
-              value={`${((powerUsers / totalEmployees) * 100).toFixed(1)}%`} 
+              value={`${powerUsersPercentage}%`} 
               subtitle={`${powerUsers} usuarios avanzados`} 
               icon={Zap} 
-              variant={powerUsers / totalEmployees >= 0.04 ? 'success' : 'warning'} 
+              variant={Number(powerUsersPercentage) >= 5 ? 'success' : 'warning'} 
+              trend="up"
+              trendValue="+2%"
+            />
+            <KPICard 
+              title="Project Delivery Rate" 
+              value={`${deliveryRate}%`} 
+              subtitle={`${projects?.filter(p => p.status === 'on-track').length || 0}/${projects?.length || 0} proyectos on-track`} 
+              icon={Target} 
+              variant={deliveryRate >= 70 ? 'success' : 'warning'} 
+              trend="neutral"
             />
           </>
         )}
@@ -748,19 +777,123 @@ export default function StakeholderView() {
           className="mb-6" 
         />
       )}
+
+      {/* 3 Compact Views: Projects, Power Users, Alerts */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+        {/* Mini Projects View */}
+        <div className="p-4 rounded-xl bg-card border border-border">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-base font-semibold flex items-center gap-2">
+              <FolderKanban className="w-4 h-4 text-primary" />
+              Proyectos
+            </h3>
+            <Link to="/projects" className="text-xs text-primary hover:underline flex items-center gap-1">
+              Ver todos <ArrowRight className="w-3 h-3" />
+            </Link>
+          </div>
+          <div className="space-y-2">
+            {loadingProjects ? (
+              <Skeleton className="h-24 w-full" />
+            ) : (
+              projects?.slice(0, 5).map((project) => (
+                <div key={project.id} className="flex items-center justify-between p-2 rounded-lg bg-muted/30">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{project.name}</p>
+                  </div>
+                  <div className="flex items-center gap-2 ml-2">
+                    <Badge 
+                      variant="outline" 
+                      className={`text-xs ${
+                        project.status === 'on-track' ? 'bg-success/20 text-success border-success/30' :
+                        project.status === 'at-risk' ? 'bg-warning/20 text-warning border-warning/30' :
+                        'bg-destructive/20 text-destructive border-destructive/30'
+                      }`}
+                    >
+                      {project.status === 'on-track' ? '✓' : project.status === 'at-risk' ? '!' : '✗'}
+                    </Badge>
+                    <span className={`text-xs font-medium ${(project.roi_percent || 0) >= 0 ? 'text-success' : 'text-destructive'}`}>
+                      {(project.roi_percent || 0) >= 0 ? '+' : ''}{project.roi_percent}%
+                    </span>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        {/* Mini Power Users View */}
+        <div className="p-4 rounded-xl bg-card border border-border">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-base font-semibold flex items-center gap-2">
+              <Zap className="w-4 h-4 text-primary" />
+              Top Power Users
+            </h3>
+          </div>
+          <div className="space-y-2">
+            {topPowerUsers.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">No hay power users registrados</p>
+            ) : (
+              topPowerUsers.map((user) => (
+                <div key={user.id} className="flex items-center justify-between p-2 rounded-lg bg-muted/30">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{user.name}</p>
+                    <p className="text-xs text-muted-foreground">{user.department}</p>
+                  </div>
+                  <div className="text-right ml-2">
+                    <p className="text-sm font-semibold text-primary">{user.weekly_ai_hours}h</p>
+                    <p className="text-xs text-muted-foreground">/ semana</p>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        {/* Mini Alerts View */}
+        <div className="p-4 rounded-xl bg-card border border-border">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-base font-semibold flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-warning" />
+              Alertas
+            </h3>
+            <Link to="/alerts" className="text-xs text-primary hover:underline flex items-center gap-1">
+              Ver todas <ArrowRight className="w-3 h-3" />
+            </Link>
+          </div>
+          <div className="space-y-2">
+            {aiLeadAlerts.map((alert) => (
+              <div key={alert.id} className="flex items-start gap-2 p-2 rounded-lg bg-muted/30">
+                {alert.severity === 'critical' ? (
+                  <AlertTriangle className="w-4 h-4 text-destructive mt-0.5 flex-shrink-0" />
+                ) : alert.severity === 'warning' ? (
+                  <AlertTriangle className="w-4 h-4 text-warning mt-0.5 flex-shrink-0" />
+                ) : (
+                  <Lightbulb className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">{alert.title}</p>
+                  {alert.department && (
+                    <p className="text-xs text-muted-foreground">{alert.department}</p>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
       
-      {/* Adoption by Department Chart */}
-      <div className="p-6 rounded-xl bg-card border border-border mb-6">
-        <h3 className="text-lg font-semibold mb-4">Adopción por Departamento</h3>
-        <div className="h-[300px] w-full">
+      {/* Compact Adoption by Department Chart - At the end */}
+      <div className="p-4 rounded-xl bg-card border border-border">
+        <h3 className="text-base font-semibold mb-3">Adopción por Departamento</h3>
+        <div className="h-[180px] w-full">
           {loadingDepts ? (
             <Skeleton className="h-full w-full" />
           ) : (
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={departmentStats} layout="vertical">
+              <BarChart data={departmentStats} layout="vertical" margin={{ left: 0, right: 10, top: 5, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke={chartColors.grid} />
-                <XAxis type="number" domain={[0, 100]} stroke={chartColors.axis} tick={{ fill: chartColors.axis }} tickFormatter={(v) => `${v}%`} />
-                <YAxis dataKey="name" type="category" stroke={chartColors.axis} tick={{ fill: chartColors.axis }} width={100} />
+                <XAxis type="number" domain={[0, 100]} stroke={chartColors.axis} tick={{ fill: chartColors.axis, fontSize: 11 }} tickFormatter={(v) => `${v}%`} />
+                <YAxis dataKey="name" type="category" stroke={chartColors.axis} tick={{ fill: chartColors.axis, fontSize: 11 }} width={85} />
                 <Tooltip 
                   contentStyle={{ 
                     backgroundColor: chartColors.tooltipBg, 
@@ -775,90 +908,6 @@ export default function StakeholderView() {
               </BarChart>
             </ResponsiveContainer>
           )}
-        </div>
-      </div>
-
-      {/* AI Tools Consumption Section */}
-      <div className="p-6 rounded-xl bg-card border border-border">
-        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-          <Cloud className="w-5 h-5 text-primary" />
-          Consumo de Herramientas AI
-        </h3>
-        
-        {/* Mini Stats Row */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <div className="p-4 rounded-lg bg-muted/30 text-center">
-            <p className="text-2xl font-bold text-primary">{(totalTokens / 1000000).toFixed(1)}M</p>
-            <p className="text-sm text-muted-foreground">Tokens Totales</p>
-          </div>
-          <div className="p-4 rounded-lg bg-muted/30 text-center">
-            <p className="text-2xl font-bold text-secondary">${costPerUser.toFixed(2)}</p>
-            <p className="text-sm text-muted-foreground">Costo por Usuario</p>
-          </div>
-          <div className="p-4 rounded-lg bg-muted/30 text-center">
-            <p className="text-2xl font-bold text-foreground">GPT-4 Turbo</p>
-            <p className="text-sm text-muted-foreground">Herramienta más usada (45%)</p>
-          </div>
-        </div>
-
-        {/* Tools Distribution Chart */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="h-[250px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={aiToolsDistribution}
-                  dataKey="value"
-                  nameKey="name"
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={50}
-                  outerRadius={80}
-                  paddingAngle={2}
-                >
-                  {aiToolsDistribution.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={[chartColors.primary, chartColors.secondary, chartColors.softBlue, '#34D399'][index]} />
-                  ))}
-                </Pie>
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: chartColors.tooltipBg, 
-                    borderColor: chartColors.tooltipBorder, 
-                    color: '#fff',
-                    borderRadius: '8px'
-                  }}
-                  formatter={(value: number) => [`${value}%`, '']}
-                />
-                <Legend 
-                  verticalAlign="middle" 
-                  align="right" 
-                  layout="vertical"
-                  formatter={(value) => <span className="text-sm text-muted-foreground">{value}</span>}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-          
-          {/* API List for AI Lead */}
-          <div className="space-y-2">
-            {apiConsumption.map((api, index) => (
-              <div key={index} className="flex items-center justify-between p-3 rounded-lg bg-muted/20">
-                <div>
-                  <p className="font-medium text-sm">{api.provider} - {api.service}</p>
-                  <p className="text-xs text-muted-foreground">{(api.usage / 1000000).toFixed(2)}M tokens</p>
-                </div>
-                <div className="text-right">
-                  <p className="font-semibold">${api.cost.toLocaleString()}</p>
-                  <span className={`text-xs ${
-                    api.trend === 'up' ? 'text-warning' : 
-                    api.trend === 'down' ? 'text-success' : 'text-muted-foreground'
-                  }`}>
-                    {api.trend === 'up' ? '↑' : api.trend === 'down' ? '↓' : '→'} {api.trendPercent}%
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
         </div>
       </div>
     </>
