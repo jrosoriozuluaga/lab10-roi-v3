@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import type { ROISettings, ROICalculation } from '@/lib/roiCalculations';
+import type { ROISettings, ROICalculation, BreakEvenProjection } from '@/lib/roiCalculations';
+import { calculateBreakEvenProjection } from '@/lib/roiCalculations';
 
 /**
  * Fetch ROI settings (methodology parameters)
@@ -19,6 +20,25 @@ export function useROISettings() {
       return data as ROISettings | null;
     },
     staleTime: 10 * 60 * 1000, // 10 minutes - settings don't change often
+  });
+}
+
+/**
+ * Fetch financial settings (investment data)
+ */
+export function useFinancialSettings() {
+  return useQuery({
+    queryKey: ['financial-settings'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('financial_settings')
+        .select('*')
+        .maybeSingle();
+      
+      if (error) throw error;
+      return data;
+    },
+    staleTime: 10 * 60 * 1000,
   });
 }
 
@@ -71,8 +91,9 @@ export function useUnifiedROIMetrics() {
   const { data: settings, isLoading: loadingSettings } = useROISettings();
   const { data: calculations, isLoading: loadingCalculations } = useROICalculations();
   const { data: latest, isLoading: loadingLatest } = useLatestROICalculation();
+  const { data: financialSettings, isLoading: loadingFinancial } = useFinancialSettings();
 
-  const isLoading = loadingSettings || loadingCalculations || loadingLatest;
+  const isLoading = loadingSettings || loadingCalculations || loadingLatest || loadingFinancial;
 
   if (isLoading || !settings || !calculations || !latest) {
     return { data: null, isLoading, settings: null, calculations: [] };
@@ -87,8 +108,9 @@ export function useUnifiedROIMetrics() {
   const totalCosts = Number(latest.total_costs);
   const cumulativeCosts = Number(latest.cumulative_costs);
   
-  // Calculate break-even month (first month with positive cumulative ROI)
-  const breakEvenMonth = calculations.find(c => Number(c.cumulative_roi) > 0)?.month_index || null;
+  // Calculate break-even projection using the new algorithm
+  const totalInvestment = financialSettings?.total_investment || 250000;
+  const breakEvenProjection = calculateBreakEvenProjection(calculations, totalInvestment);
   
   // Project M12 ROI based on trend
   const lastThreeMonths = calculations.slice(-3);
@@ -111,8 +133,14 @@ export function useUnifiedROIMetrics() {
       efficiencyFactor: Number(latest.efficiency_factor_used),
       attributionFactor: Number(latest.attribution_factor_used),
       activeUsers: latest.active_users,
+      // Break-even projection
+      breakEvenMonth: breakEvenProjection.breakEvenMonth,
+      breakEvenIsAchieved: breakEvenProjection.isAchieved,
+      breakEvenConfidence: breakEvenProjection.confidence,
+      breakEvenMonthsRemaining: breakEvenProjection.monthsRemaining,
+      breakEvenProjectedDate: breakEvenProjection.projectedDate,
+      breakEvenProjection, // Full projection object for tooltips
       // Projections
-      breakEvenMonth,
       projectedM12ROI: Math.round(projectedM12ROI),
       currentMonth: latest.month_index,
       monthLabel: latest.month_label,

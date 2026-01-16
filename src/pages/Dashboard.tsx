@@ -86,7 +86,48 @@ export default function Dashboard() {
             <KPICard title="Net AI Value (Acumulado)" value={formatCurrency(roiData?.cumulativeNetValue ?? 0)} subtitle={`${roiData?.monthLabel || 'M3'} - ROI acumulado: ${roiData?.cumulativeROI?.toFixed(0) ?? 0}%`} icon={DollarSign} variant={(roiData?.cumulativeNetValue ?? 0) >= 0 ? 'success' : 'warning'} trend={(roiData?.monthlyNetBenefit ?? 0) >= 0 ? 'up' : 'down'} trendValue={`${(roiData?.monthlyNetBenefit ?? 0) >= 0 ? '+' : ''}${((roiData?.monthlyNetBenefit ?? 0) / 1000).toFixed(1)}k este mes`} />
             <KPICard title="Activation Rate" value={`${summary?.activationRate || 57}%`} subtitle={`${summary?.activeUsers || 292} de ${summary?.totalEmployees || 512} usuarios`} icon={Users} variant="success" trend="up" trendValue="+8%" />
             <KPICard title="Beneficio Mensual" value={formatCurrency(roiData?.monthlyNetBenefit ?? 0)} subtitle={`ROI mensual: ${roiData?.currentMonthROI?.toFixed(0) ?? 0}%`} icon={Cpu} variant={(roiData?.monthlyNetBenefit ?? 0) >= 0 ? 'success' : 'warning'} trend={(roiData?.monthlyNetBenefit ?? 0) >= 0 ? 'up' : 'down'} trendValue={`η=${roiData?.efficiencyFactor?.toFixed(2) ?? '0.55'}`} />
-            <KPICard title="Break-even Proyectado" value={roiData?.breakEvenMonth ? `Mes ${roiData.breakEvenMonth}` : 'Pendiente'} subtitle={`Inversión: $250K • Recuperado: ${formatCurrency(250000 + (roiData?.cumulativeNetValue ?? -250000))}`} icon={TrendingUp} variant={roiData?.breakEvenMonth && roiData.breakEvenMonth <= 12 ? 'success' : 'default'} trend="up" />
+            <UITooltip>
+              <TooltipTrigger asChild>
+                <div>
+                  <KPICard 
+                    title="Break-even Proyectado" 
+                    value={roiData?.breakEvenIsAchieved ? 'Alcanzado ✓' : roiData?.breakEvenMonth ? `Mes ${roiData.breakEvenMonth}` : 'Calculando...'} 
+                    subtitle={
+                      roiData?.breakEvenIsAchieved 
+                        ? 'Inversión recuperada' 
+                        : roiData?.breakEvenMonthsRemaining 
+                          ? `${roiData.breakEvenMonthsRemaining} meses restantes • ${roiData.breakEvenProjectedDate || ''}` 
+                          : `Inversión: $250K`
+                    } 
+                    icon={TrendingUp} 
+                    variant={roiData?.breakEvenIsAchieved ? 'success' : roiData?.breakEvenMonth && roiData.breakEvenMonth <= 12 ? 'success' : 'default'} 
+                    trend="up" 
+                    trendValue={`Confianza: ${roiData?.breakEvenConfidence === 'high' ? 'Alta' : roiData?.breakEvenConfidence === 'medium' ? 'Media' : 'Baja'}`}
+                  />
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="max-w-sm bg-neutral-900 text-white border-neutral-700 p-4">
+                <div className="space-y-2">
+                  <p className="font-semibold text-primary">Proyección Break-even</p>
+                  <p className="text-xs text-muted-foreground">{roiData?.breakEvenProjection?.methodology}</p>
+                  {roiData?.breakEvenProjection?.projectedValues && roiData.breakEvenProjection.projectedValues.length > 0 && (
+                    <div className="mt-2 pt-2 border-t border-neutral-700">
+                      <p className="text-xs font-medium mb-1">Proyección mensual:</p>
+                      <div className="grid grid-cols-2 gap-1 text-xs">
+                        {roiData.breakEvenProjection.projectedValues.slice(0, 4).map((pv) => (
+                          <div key={pv.month} className="flex justify-between">
+                            <span className="text-muted-foreground">{pv.label}:</span>
+                            <span className={pv.projectedCumulative >= 0 ? 'text-green-400' : 'text-yellow-400'}>
+                              {formatCurrency(pv.projectedCumulative)}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </TooltipContent>
+            </UITooltip>
           </>}
       </div>
 
