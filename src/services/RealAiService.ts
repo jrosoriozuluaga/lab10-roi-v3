@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { calculateDepartmentStats } from "@/hooks/useMetrics";
 
 export interface DashboardContext {
   summary: {
@@ -48,90 +49,124 @@ export interface ChartData {
   data: Array<{ name: string; value: number }>;
 }
 
-// Gather context data from mock data (can be extended to use real Supabase data)
+// Gather context data from real database
 export async function gatherContextData(): Promise<DashboardContext> {
-  // Fetch projects from Supabase if available
+  // Fetch projects from Supabase
   let projects: DashboardContext['projects'] = [];
   
   try {
     const { data: projectsData, error } = await supabase
       .from('projects')
-      .select('name, status')
-      .limit(20);
+      .select('name, status, roi_percent, north_star, department')
+      .limit(30);
     
     if (!error && projectsData) {
       projects = projectsData.map(p => ({
         name: p.name,
         status: p.status,
-        roi: null,
-        northStar: null,
-        department: null,
+        roi: p.roi_percent,
+        northStar: p.north_star,
+        department: p.department,
       }));
     }
   } catch (e) {
-    console.log('Using mock project data');
+    console.log('Using fallback project data');
   }
 
-  // If no projects from DB, use mock data
-  if (projects.length === 0) {
-    projects = [
-      { name: 'Predicción de Churn', status: 'on-track', roi: 45, northStar: 'Tasa de retención +12%', department: 'Customer Success' },
-      { name: 'Automatización Legal', status: 'at-risk', roi: -5, northStar: 'Reducir tiempo revisión 40%', department: 'Legal' },
-      { name: 'AI Customer Support', status: 'on-track', roi: 78, northStar: 'CSAT > 90%', department: 'Support' },
-      { name: 'Sales Forecasting', status: 'delayed', roi: 12, northStar: 'Accuracy > 85%', department: 'Sales' },
-      { name: 'HR Analytics', status: 'on-track', roi: 34, northStar: 'Reducir turnover 15%', department: 'HR' },
+  // Fetch employees and calculate department stats
+  let departments: DashboardContext['departments'] = [];
+  let totalEmployees = 512;
+  let activeUsers = 292;
+  let activationRate = 57;
+
+  try {
+    const { data: employeesData, error } = await supabase
+      .from('employees')
+      .select('id, department, usage_level, weekly_ai_hours, last_active');
+
+    if (!error && employeesData && employeesData.length > 0) {
+      totalEmployees = employeesData.length;
+      activeUsers = employeesData.filter(e => e.usage_level !== 'inactive').length;
+      activationRate = Math.round((activeUsers / totalEmployees) * 100);
+
+      // Calculate department stats
+      const deptStats = calculateDepartmentStats(employeesData as any);
+      departments = deptStats.map(d => ({
+        name: d.name,
+        activationRate: Math.round(d.activationRate),
+        status: d.status === 'on-track' ? 'healthy' : d.status === 'at-risk' ? 'warning' : 'critical',
+      }));
+    }
+  } catch (e) {
+    console.log('Using fallback employee data');
+  }
+
+  // Fallback department data if no employees
+  if (departments.length === 0) {
+    departments = [
+      { name: 'Engineering', activationRate: 80, status: 'healthy' },
+      { name: 'Operations', activationRate: 65, status: 'healthy' },
+      { name: 'Sales', activationRate: 60, status: 'warning' },
+      { name: 'Marketing', activationRate: 60, status: 'warning' },
+      { name: 'Finance', activationRate: 40, status: 'warning' },
+      { name: 'HR', activationRate: 25, status: 'warning' },
+      { name: 'Legal', activationRate: 12, status: 'critical' },
     ];
   }
 
-  // Department data based on typical activation patterns
-  const departments: DashboardContext['departments'] = [
-    { name: 'Engineering', activationRate: 85, status: 'healthy' },
-    { name: 'Product', activationRate: 72, status: 'healthy' },
-    { name: 'Sales', activationRate: 45, status: 'warning' },
-    { name: 'Marketing', activationRate: 38, status: 'warning' },
-    { name: 'Legal', activationRate: 20, status: 'critical' },
-    { name: 'HR', activationRate: 55, status: 'warning' },
-    { name: 'Finance', activationRate: 42, status: 'warning' },
-    { name: 'Support', activationRate: 68, status: 'healthy' },
-  ];
+  // Fetch ROI trend from monthly_metrics
+  let roiTrend: DashboardContext['roiTrend'] = [];
+  
+  try {
+    const { data: metricsData, error } = await supabase
+      .from('monthly_metrics')
+      .select('month_label, monthly_roi')
+      .order('month_index', { ascending: true });
 
-  // ROI J-Curve trend
-  const roiTrend = [
-    { month: 'Mes 1', value: -45 },
-    { month: 'Mes 2', value: -35 },
-    { month: 'Mes 3', value: -25 },
-    { month: 'Mes 4', value: -10 },
-    { month: 'Mes 5', value: 8 },
-    { month: 'Mes 6', value: 25 },
-    { month: 'Mes 7', value: 45 },
-    { month: 'Mes 8', value: 68 },
-    { month: 'Mes 9', value: 92 },
-    { month: 'Mes 10', value: 115 },
-    { month: 'Mes 11', value: 135 },
-    { month: 'Mes 12', value: 156 },
-  ];
+    if (!error && metricsData) {
+      roiTrend = metricsData.map(m => ({
+        month: m.month_label,
+        value: m.monthly_roi,
+      }));
+    }
+  } catch (e) {
+    console.log('Using fallback ROI data');
+  }
 
-  // Calculate summary metrics
-  const totalEmployees = 1200;
-  const activeUsers = Math.round(totalEmployees * 0.52);
-  const activationRate = 52;
-  const deliveryRate = 68;
+  // Fallback ROI trend
+  if (roiTrend.length === 0) {
+    roiTrend = [
+      { month: 'Mes 1', value: -80 },
+      { month: 'Mes 2', value: -40 },
+      { month: 'Mes 3', value: 3 },
+    ];
+  }
+
+  // Calculate delivery rate from projects
+  const totalProjects = projects.length || 5;
+  const onTrackProjects = projects.filter(p => p.status === 'on-track').length;
+  const deliveryRate = totalProjects > 0 ? Math.round((onTrackProjects / totalProjects) * 100) : 68;
+
+  // Calculate alerts from department/project status
+  const criticalDepts = departments.filter(d => d.status === 'critical').length;
+  const warningDepts = departments.filter(d => d.status === 'warning').length;
+  const atRiskProjects = projects.filter(p => p.status === 'at-risk' || p.status === 'off-track').length;
 
   return {
     summary: {
-      netAIValue: '$2.4M',
+      netAIValue: '-$12,500',
       activationRate,
       deliveryRate,
-      projectedROI: '156%',
-      currentMonth: 3,
+      projectedROI: '+45%',
+      currentMonth: roiTrend.length || 3,
       totalEmployees,
       activeUsers,
     },
     projects,
     departments,
     alerts: {
-      critical: 2,
-      warning: 5,
+      critical: criticalDepts + atRiskProjects,
+      warning: warningDepts,
       opportunity: 3,
     },
     roiTrend,
