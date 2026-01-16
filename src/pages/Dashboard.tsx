@@ -2,7 +2,9 @@ import { useState } from 'react';
 import { DashboardLayout } from '@/components/DashboardLayout';
 import { KPICard } from '@/components/KPICard';
 import { DollarSign, Users, TrendingUp, Cpu, Download, Info } from 'lucide-react';
-import { useSummaryMetrics, useMonthlyMetrics, transformMetricsForCharts } from '@/hooks/useMetrics';
+import { useSummaryMetrics } from '@/hooks/useMetrics';
+import { useUnifiedROIMetrics } from '@/hooks/useROIData';
+import { transformCalculationsForCharts, formatCurrency as formatCurrencyUtil } from '@/lib/roiCalculations';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -21,10 +23,10 @@ const chartColors = {
 export default function Dashboard() {
   const [methodologyOpen, setMethodologyOpen] = useState(false);
   const { data: summary, isLoading: loadingSummary } = useSummaryMetrics();
-  const { data: metrics, isLoading: loadingMetrics } = useMonthlyMetrics();
+  const { data: roiData, isLoading: loadingROI, calculations } = useUnifiedROIMetrics();
 
-  const chartData = metrics ? transformMetricsForCharts(metrics) : [];
-  const isLoading = loadingSummary || loadingMetrics;
+  const chartData = calculations ? transformCalculationsForCharts(calculations) : [];
+  const isLoading = loadingSummary || loadingROI;
 
   const handleExport = () => {
     toast.info('Generando Reporte Ejecutivo Q1 (PDF)...', {
@@ -33,13 +35,8 @@ export default function Dashboard() {
     });
   };
 
-  // Format currency helper
-  const formatCurrency = (value: number) => {
-    if (Math.abs(value) >= 1000) {
-      return `${value >= 0 ? '' : '−'}$${Math.abs(value / 1000).toFixed(1)}k`;
-    }
-    return `${value >= 0 ? '' : '−'}$${Math.abs(value).toLocaleString()}`;
-  };
+  // Format currency helper using unified utility
+  const formatCurrency = (value: number) => formatCurrencyUtil(value, true);
 
   return (
     <DashboardLayout>
@@ -48,7 +45,7 @@ export default function Dashboard() {
         <div>
           <h1 className="text-3xl font-bold text-foreground">General AI Overview</h1>
           <p className="text-muted-foreground">
-            Mes {metrics?.length || 3} de implementación • {summary?.totalEmployees || 512} empleados • $250k inversión anual
+            Mes {roiData?.currentMonth || 3} de implementación • {summary?.totalEmployees || 512} empleados • η={roiData?.efficiencyFactor?.toFixed(2) || '0.55'} α={roiData?.attributionFactor?.toFixed(2) || '0.30'}
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -84,12 +81,12 @@ export default function Dashboard() {
           <>
             <KPICard 
               title="Net AI Value" 
-              value={formatCurrency(summary?.netAIValue || -12500)} 
-              subtitle={`Mes ${metrics?.length || 3} - Tendencia al alza`}
+              value={formatCurrency(roiData?.cumulativeNetValue || 77607)} 
+              subtitle={`${roiData?.monthLabel || 'M3'} - ROI acumulado: ${roiData?.cumulativeROI?.toFixed(0) || 103}%`}
               icon={DollarSign} 
-              variant={(summary?.netAIValue || 0) >= 0 ? 'success' : 'warning'} 
+              variant={(roiData?.cumulativeNetValue || 0) >= 0 ? 'success' : 'warning'} 
               trend="up" 
-              trendValue="+15% vs M2" 
+              trendValue={`+${((roiData?.netAIValue || 0) / 1000).toFixed(0)}k este mes`}
             />
             <KPICard 
               title="Activation Rate" 
@@ -111,8 +108,8 @@ export default function Dashboard() {
             />
             <KPICard 
               title="ROI Proyectado M12" 
-              value="+45%" 
-              subtitle="Break-even: M7" 
+              value={`+${roiData?.projectedM12ROI || 263}%`} 
+              subtitle={roiData?.breakEvenMonth ? `Break-even: M${roiData.breakEvenMonth}` : 'Calculando...'}
               icon={TrendingUp} 
               variant="success" 
               trend="up" 
@@ -123,9 +120,9 @@ export default function Dashboard() {
 
       {/* J-Curve Chart - Always visible */}
       <div className="p-6 rounded-xl bg-card border border-border">
-        <h3 className="text-lg font-semibold mb-4">Tendencia de ROI (Curva J)</h3>
+        <h3 className="text-lg font-semibold mb-4">Tendencia de ROI Acumulado (Curva J) — Metodología Unificada</h3>
         <div className="h-[350px] w-full">
-          {loadingMetrics ? (
+          {loadingROI ? (
             <Skeleton className="h-full w-full" />
           ) : (
             <ResponsiveContainer width="100%" height="100%">

@@ -1,0 +1,291 @@
+/**
+ * Unified ROI Calculation Library
+ * 
+ * This module provides a single source of truth for all ROI calculations
+ * across the application. All views and the AI chat use these functions.
+ * 
+ * Formula: Net AI Value = (FTE Savings × η) + (Revenue × α) + Cost Avoidance - Total Costs
+ * ROI % = (Net AI Value / Total Costs) × 100
+ */
+
+export interface ROISettings {
+  id: string;
+  efficiency_factor: number;      // η - efficiency multiplier (0.45-0.90)
+  attribution_factor: number;     // α - revenue attribution (0.20-0.50)
+  avg_hourly_rate: number;        // Employee billable rate
+  avg_hourly_cost: number;        // Employee cost to company
+  hours_saved_per_user_week: number;
+  learning_curve_penalty: number; // Productivity loss during learning (0.20 = 20%)
+  monthly_licenses: number;
+  implementation_cost: number;
+  training_budget: number;
+  learning_curve_hours: number;
+  monthly_revenue_uplift: number;
+  license_savings: number;
+  outsourcing_reduction: number;
+  downtime_reduction: number;
+  compliance_savings: number;
+  fraud_prevention: number;
+  rework_reduction: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface ROICalculation {
+  id: string;
+  month_index: number;
+  month_label: string;
+  active_users: number;
+  efficiency_factor_used: number;
+  attribution_factor_used: number;
+  // Savings
+  gross_fte_savings: number;
+  net_fte_savings: number;
+  license_savings: number;
+  outsourcing_reduction: number;
+  total_hard_savings: number;
+  // Revenue
+  gross_revenue: number;
+  net_revenue: number;
+  // Cost Avoidance
+  downtime_reduction: number;
+  compliance_savings: number;
+  fraud_prevention: number;
+  rework_reduction: number;
+  total_cost_avoidance: number;
+  // Totals
+  total_benefits: number;
+  monthly_costs: number;
+  hidden_costs: number;
+  total_costs: number;
+  net_ai_value: number;
+  monthly_roi: number;
+  cumulative_net_value: number;
+  cumulative_roi: number;
+  cumulative_costs: number;
+  created_at?: string;
+}
+
+export interface ROIInputs {
+  numberOfUsers: number;
+  efficiencyFactor: number;
+  attributionFactor: number;
+  avgHourlyRate: number;
+  avgHourlyCost: number;
+  hoursSavedPerWeek: number;
+  learningCurvePenalty: number;
+  monthlyLicenses: number;
+  implementationCost: number;
+  trainingBudget: number;
+  learningCurveHours: number;
+  monthlyRevenueUplift: number;
+  licenseSavings: number;
+  outsourcingReduction: number;
+  downtimeReduction: number;
+  complianceSavings: number;
+  fraudPrevention: number;
+  reworkReduction: number;
+}
+
+export interface ROIResult {
+  // Costs
+  hiddenCost: number;
+  totalMonthlyCosts: number;
+  totalOneTimeCosts: number;
+  annualizedCosts: number;
+  // Savings
+  grossFTESavings: number;
+  netFTESavings: number;
+  totalHardSavings: number;
+  // Revenue
+  grossRevenue: number;
+  netRevenue: number;
+  // Cost Avoidance
+  totalCostAvoidance: number;
+  // Totals
+  totalBenefits: number;
+  netAIValue: number;
+  roi: number;
+  paybackMonths: number;
+}
+
+/**
+ * Convert database ROI settings to input format for calculations
+ */
+export function settingsToInputs(settings: ROISettings, activeUsers: number): ROIInputs {
+  return {
+    numberOfUsers: activeUsers,
+    efficiencyFactor: Number(settings.efficiency_factor),
+    attributionFactor: Number(settings.attribution_factor),
+    avgHourlyRate: Number(settings.avg_hourly_rate),
+    avgHourlyCost: Number(settings.avg_hourly_cost),
+    hoursSavedPerWeek: Number(settings.hours_saved_per_user_week),
+    learningCurvePenalty: Number(settings.learning_curve_penalty),
+    monthlyLicenses: Number(settings.monthly_licenses),
+    implementationCost: Number(settings.implementation_cost),
+    trainingBudget: Number(settings.training_budget),
+    learningCurveHours: Number(settings.learning_curve_hours),
+    monthlyRevenueUplift: Number(settings.monthly_revenue_uplift),
+    licenseSavings: Number(settings.license_savings),
+    outsourcingReduction: Number(settings.outsourcing_reduction),
+    downtimeReduction: Number(settings.downtime_reduction),
+    complianceSavings: Number(settings.compliance_savings),
+    fraudPrevention: Number(settings.fraud_prevention),
+    reworkReduction: Number(settings.rework_reduction),
+  };
+}
+
+/**
+ * Core ROI calculation function - single source of truth
+ * 
+ * @param inputs - All parameters needed for ROI calculation
+ * @returns Complete ROI breakdown
+ */
+export function calculateROI(inputs: ROIInputs): ROIResult {
+  // Hidden Cost (Learning Curve) - opportunity cost of productivity loss
+  const hiddenCost = inputs.numberOfUsers * inputs.learningCurveHours * inputs.avgHourlyCost * inputs.learningCurvePenalty;
+  
+  // Total Costs
+  const totalMonthlyCosts = inputs.monthlyLicenses + (hiddenCost / 12);
+  const totalOneTimeCosts = inputs.implementationCost + inputs.trainingBudget;
+  const annualizedCosts = (totalMonthlyCosts * 12) + totalOneTimeCosts;
+
+  // Hard Savings (with efficiency factor η)
+  const grossFTESavings = inputs.numberOfUsers * inputs.hoursSavedPerWeek * 52 * inputs.avgHourlyRate;
+  const netFTESavings = grossFTESavings * inputs.efficiencyFactor;
+  const totalHardSavings = netFTESavings + (inputs.licenseSavings * 12) + (inputs.outsourcingReduction * 12);
+
+  // Hard Revenue (with attribution factor α)
+  const grossRevenue = inputs.monthlyRevenueUplift * 12;
+  const netRevenue = grossRevenue * inputs.attributionFactor;
+
+  // Cost Avoidance (annual)
+  const totalCostAvoidance = (inputs.downtimeReduction + inputs.complianceSavings + inputs.fraudPrevention + inputs.reworkReduction) * 12;
+
+  // Total Benefits
+  const totalBenefits = totalHardSavings + netRevenue + totalCostAvoidance;
+
+  // Net AI Value
+  const netAIValue = totalBenefits - annualizedCosts;
+
+  // ROI %
+  const roi = annualizedCosts > 0 ? ((netAIValue / annualizedCosts) * 100) : 0;
+
+  // Payback Period (months)
+  const monthlyBenefit = totalBenefits / 12;
+  const paybackMonths = monthlyBenefit > 0 ? Math.ceil(annualizedCosts / monthlyBenefit) : Infinity;
+
+  return {
+    hiddenCost,
+    totalMonthlyCosts,
+    totalOneTimeCosts,
+    annualizedCosts,
+    grossFTESavings,
+    netFTESavings,
+    totalHardSavings,
+    grossRevenue,
+    netRevenue,
+    totalCostAvoidance,
+    totalBenefits,
+    netAIValue,
+    roi,
+    paybackMonths,
+  };
+}
+
+/**
+ * Calculate monthly ROI for a specific month
+ * Used for J-curve and trend analysis
+ */
+export function calculateMonthlyROI(
+  inputs: ROIInputs,
+  monthIndex: number,
+  efficiencyForMonth: number,
+  attributionForMonth: number
+): { monthlyNetValue: number; monthlyROI: number; monthlyCosts: number } {
+  const adjustedInputs = {
+    ...inputs,
+    efficiencyFactor: efficiencyForMonth,
+    attributionFactor: attributionForMonth,
+  };
+  
+  const result = calculateROI(adjustedInputs);
+  
+  // Monthly values (divide annual by 12)
+  const monthlyBenefits = result.totalBenefits / 12;
+  const monthlyCosts = result.totalMonthlyCosts + (result.totalOneTimeCosts / 12);
+  const monthlyNetValue = monthlyBenefits - monthlyCosts;
+  const monthlyROI = monthlyCosts > 0 ? ((monthlyNetValue / monthlyCosts) * 100) : 0;
+  
+  return { monthlyNetValue, monthlyROI, monthlyCosts };
+}
+
+/**
+ * Transform ROI calculations for chart display
+ */
+export function transformCalculationsForCharts(calculations: ROICalculation[]) {
+  return calculations.map(calc => ({
+    month: calc.month_label,
+    roi: Math.round(Number(calc.cumulative_roi) * 10) / 10,
+    monthlyRoi: Math.round(Number(calc.monthly_roi) * 10) / 10,
+    netValue: Number(calc.net_ai_value),
+    cumulativeNetValue: Number(calc.cumulative_net_value),
+    totalBenefits: Number(calc.total_benefits),
+    totalCosts: Number(calc.total_costs),
+    activeUsers: calc.active_users,
+    efficiencyFactor: Number(calc.efficiency_factor_used),
+  }));
+}
+
+/**
+ * Get efficiency factor recommendation based on month
+ * Represents maturity curve of AI implementation
+ */
+export function getRecommendedEfficiency(monthIndex: number): number {
+  if (monthIndex <= 1) return 0.45;
+  if (monthIndex <= 2) return 0.50;
+  if (monthIndex <= 3) return 0.55;
+  if (monthIndex <= 4) return 0.60;
+  if (monthIndex <= 5) return 0.65;
+  if (monthIndex <= 6) return 0.70;
+  if (monthIndex <= 9) return 0.80;
+  return 0.85;
+}
+
+/**
+ * Get attribution factor recommendation based on month
+ * Represents confidence in attributing revenue to AI
+ */
+export function getRecommendedAttribution(monthIndex: number): number {
+  if (monthIndex <= 1) return 0.20;
+  if (monthIndex <= 2) return 0.25;
+  if (monthIndex <= 3) return 0.30;
+  if (monthIndex <= 4) return 0.32;
+  if (monthIndex <= 5) return 0.35;
+  if (monthIndex <= 6) return 0.38;
+  if (monthIndex <= 9) return 0.42;
+  return 0.45;
+}
+
+/**
+ * Format currency for display
+ */
+export function formatCurrency(value: number, compact = false): string {
+  if (compact && Math.abs(value) >= 1000) {
+    const sign = value >= 0 ? '' : '−';
+    return `${sign}$${Math.abs(value / 1000).toFixed(1)}k`;
+  }
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(value);
+}
+
+/**
+ * Format percentage for display
+ */
+export function formatPercentage(value: number, decimals = 1): string {
+  return `${value >= 0 ? '+' : ''}${value.toFixed(decimals)}%`;
+}
