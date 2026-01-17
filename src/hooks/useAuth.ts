@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { User, Session } from '@supabase/supabase-js';
-// import { supabase } from '@/integrations/supabase/client'; // Removed unused client
+import { supabase } from '@/integrations/supabase/client';
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
@@ -8,67 +8,74 @@ export function useAuth() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check for persisted mock session
-    const storedSession = localStorage.getItem('mock_session');
-    if (storedSession) {
-      try {
-        const parsedSession = JSON.parse(storedSession);
-        setSession(parsedSession);
-        setUser(parsedSession.user);
-      } catch (e) {
-        console.error('Failed to parse mock session', e);
-        localStorage.removeItem('mock_session');
-      }
-    }
-    setLoading(false);
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
+
+    // Listen for changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const signIn = async (email: string) => {
-    // Mock successful login for any email
-    const mockUser: User = {
-      id: 'mock-user-id',
-      app_metadata: {},
-      user_metadata: {},
-      aud: 'authenticated',
-      created_at: new Date().toISOString(),
-      email: email,
-      phone: '',
-      role: 'authenticated',
-      updated_at: new Date().toISOString(),
-    };
+    // For this demo, we'll try to sign in with password if provided, 
+    // but the UI currently only asks for email in some flows. 
+    // We should update to support password or magic link.
+    // However, looking at Auth.tsx, it DOES collect password.
+    // We need to update the signature of signIn to accept password.
 
-    const mockSession: Session = {
-      access_token: 'mock-access-token',
-      refresh_token: 'mock-refresh-token',
-      expires_in: 3600,
-      token_type: 'bearer',
-      user: mockUser,
-    };
+    // NOTE: The previous interface was signIn(email). We need to support the existing UI calls.
+    // But Auth.tsx calls signIn(email) but HAS password state. 
+    // We need to look at Auth.tsx again. It collects password but didn't pass it to signIn!
+    // AHH, wait. In Step 85, Auth.tsx: `const { error } = await signIn(email);` 
+    // It IGNORES the password state `password`.
+    // I need to update Auth.tsx as well!
 
-    localStorage.setItem('mock_session', JSON.stringify(mockSession));
-    setSession(mockSession);
-    setUser(mockUser);
-
-    return { error: null };
+    // Let's implement this correctly.
+    return { error: new Error("Please update Auth.tsx to pass password") };
   };
 
-  const signUp = async (email: string) => {
-    // Mock signup is just signin
-    return signIn(email);
+  const signInWithPassword = async (email: string, password: string) => {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    return { data, error };
+  };
+
+  const signUp = async (email: string, password: string) => {
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          role: 'authenticated', // Default role
+        }
+      }
+    });
+    return { data, error };
   };
 
   const signOut = async () => {
-    localStorage.removeItem('mock_session');
-    setSession(null);
-    setUser(null);
-    return { error: null };
+    const { error } = await supabase.auth.signOut();
+    return { error };
   };
 
   return {
     user,
     session,
     loading,
-    signIn,
+    signIn: signInWithPassword, // Use the real one
     signUp,
     signOut,
   };

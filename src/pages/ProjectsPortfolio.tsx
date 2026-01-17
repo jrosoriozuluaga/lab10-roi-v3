@@ -11,7 +11,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { supabase } from '@/integrations/supabase/client';
 import { ProjectFormDialog, ProjectFormData } from '@/components/ProjectFormDialog';
 import { toast } from 'sonner';
-import { generateProjects } from '@/lib/mockData';
+
 
 interface Project {
   id: string;

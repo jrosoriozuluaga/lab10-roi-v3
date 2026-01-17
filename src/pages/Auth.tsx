@@ -54,7 +54,7 @@ export default function Auth() {
     setIsLoading(true);
     setIsLoading(true);
     // Mock auth only needs email, but we keep password in UI for "realism"
-    const { error } = await signIn(email);
+    const { error } = await signIn(email, password);
     setIsLoading(false);
 
     if (error) {
@@ -70,8 +70,8 @@ export default function Auth() {
     if (!validateForm()) return;
 
     setIsLoading(true);
-    setIsLoading(true);
-    const { error } = await signUp(email);
+    // Remove duplicate setIsLoading
+    const { error } = await signUp(email, password);
     setIsLoading(false);
 
     if (error) {
