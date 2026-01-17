@@ -126,7 +126,6 @@ export default function ProjectsPortfolio() {
 
   const queryClient = useQueryClient();
 
-  import { generateProjects } from '@/lib/mockData';
 
   // Fetch projects from Supabase or Fallback
   const { data: projects = [], isLoading } = useQuery({
