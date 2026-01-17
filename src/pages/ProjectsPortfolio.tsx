@@ -52,14 +52,14 @@ function ImpactBadge({ impact }: { impact: Project['impact_level'] }) {
   );
 }
 
-function ProjectDetailSheet({ 
-  project, 
-  open, 
+function ProjectDetailSheet({
+  project,
+  open,
   onClose,
-  onEdit 
-}: { 
-  project: Project | null; 
-  open: boolean; 
+  onEdit
+}: {
+  project: Project | null;
+  open: boolean;
   onClose: () => void;
   onEdit: (project: Project) => void;
 }) {
@@ -103,7 +103,7 @@ function ProjectDetailSheet({
 
         {/* Action */}
         <div className="pt-6">
-          <Button 
+          <Button
             className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
             onClick={() => onEdit(project)}
           >
@@ -208,7 +208,7 @@ export default function ProjectsPortfolio() {
     // Filter by search
     if (search) {
       const searchLower = search.toLowerCase();
-      result = result.filter(p => 
+      result = result.filter(p =>
         p.name.toLowerCase().includes(searchLower) ||
         p.owner.toLowerCase().includes(searchLower) ||
         p.north_star.toLowerCase().includes(searchLower)
@@ -286,7 +286,7 @@ export default function ProjectsPortfolio() {
             </div>
             <p className="text-3xl font-bold text-foreground">{totalProjects}</p>
           </div>
-          
+
           {/* Delivery Rate */}
           <div className="p-5 rounded-xl bg-card border border-border text-center">
             <div className="flex items-center justify-center gap-2 mb-2">
@@ -298,7 +298,7 @@ export default function ProjectsPortfolio() {
               {onTrackCount} de {totalProjects} on track
             </p>
           </div>
-          
+
           {/* At Risk */}
           <div className="p-5 rounded-xl bg-card border border-border text-center">
             <div className="flex items-center justify-center gap-2 mb-2">
@@ -310,7 +310,7 @@ export default function ProjectsPortfolio() {
         </div>
 
         {/* Table */}
-        <div className="bg-card border border-border rounded-xl overflow-hidden">
+        <div className="bg-card border border-border rounded-xl overflow-hidden overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow className="hover:bg-transparent border-border">
@@ -352,8 +352,8 @@ export default function ProjectsPortfolio() {
                 ))
               ) : (
                 filteredProjects.map((project) => (
-                  <TableRow 
-                    key={project.id} 
+                  <TableRow
+                    key={project.id}
                     className="cursor-pointer hover:bg-muted/50 border-border"
                     onClick={() => setSelectedProject(project)}
                   >
@@ -392,7 +392,7 @@ export default function ProjectsPortfolio() {
                 {search ? 'Sin resultados' : 'No hay proyectos'}
               </h3>
               <p className="text-muted-foreground mb-4">
-                {search 
+                {search
                   ? 'No se encontraron proyectos con esos criterios'
                   : 'Agrega tu primer proyecto AI para comenzar'}
               </p>
@@ -407,9 +407,9 @@ export default function ProjectsPortfolio() {
         </div>
 
         {/* Detail Sheet */}
-        <ProjectDetailSheet 
-          project={selectedProject} 
-          open={!!selectedProject} 
+        <ProjectDetailSheet
+          project={selectedProject}
+          open={!!selectedProject}
           onClose={() => setSelectedProject(null)}
           onEdit={handleEdit}
         />

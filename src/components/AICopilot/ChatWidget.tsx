@@ -107,7 +107,7 @@ export function ChatWidget() {
       <Button
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
-          "fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full shadow-lg",
+          "fixed bottom-6 right-6 z-[100] w-14 h-14 rounded-full shadow-lg",
           "bg-primary hover:bg-primary/90 text-primary-foreground",
           "transition-all duration-300",
           isOpen ? "scale-0 opacity-0" : "scale-100 opacity-100",
@@ -120,7 +120,7 @@ export function ChatWidget() {
       {/* Chat Window */}
       <div
         className={cn(
-          "fixed bottom-6 right-6 z-50 w-[400px] h-[600px] max-h-[80vh]",
+          "fixed bottom-6 right-6 z-[100] w-[400px] h-[600px] max-h-[80vh]",
           "bg-card border border-border rounded-xl shadow-2xl",
           "flex flex-col overflow-hidden",
           "transition-all duration-300 origin-bottom-right",
